@@ -1,0 +1,348 @@
+/* ============================================================
+   PrecoBoi — Identidade Visual Facholi
+   Cores extraídas do logo e site grupofacholi.com.br
+   ============================================================ */
+
+:root {
+  /* Paleta principal Facholi */
+  --facholi-verde-escuro:   #1a5f2a;
+  --facholi-verde-medio:    #237a37;
+  --facholi-verde-claro:    #72b840;
+  --facholi-laranja:        #f7941d;
+  --facholi-laranja-hover:  #e07d0a;
+  --facholi-cinza-texto:    #555555;
+  --facholi-cinza-claro:    #f4f6f4;
+  --facholi-branco:         #ffffff;
+
+  /* Aliases semânticos */
+  --color-primary:    var(--facholi-verde-escuro);
+  --color-secondary:  var(--facholi-verde-claro);
+  --color-accent:     var(--facholi-laranja);
+  --color-bg:         #f0f4f0;
+  --color-sidebar-bg: var(--facholi-verde-escuro);
+}
+
+/* ============================================================
+   Reset / Base
+   ============================================================ */
+body {
+  background-color: var(--color-bg);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  color: #333;
+}
+
+#app {
+  width: 100%;
+  max-width: 100%;
+  text-align: left;
+}
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+.sidebar {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #1a5f2a 0%, #14491f 100%);
+  color: white;
+  width: 248px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+}
+
+.sidebar-brand {
+  padding: 1.1rem 1rem 0.9rem;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.12);
+}
+
+.sidebar-brand img {
+  filter: brightness(0) invert(1);
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+}
+
+.sidebar-system-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-top: 0.3rem;
+}
+
+.sidebar-section {
+  padding: 0.35rem 1rem 0.1rem;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.38);
+  margin-top: 0.6rem;
+}
+
+.sidebar .nav-link {
+  color: rgba(255,255,255,0.82);
+  padding: 0.52rem 0.85rem;
+  border-radius: 7px;
+  margin: 1px 8px;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.sidebar .nav-link i {
+  font-size: 0.95rem;
+  width: 18px;
+  text-align: center;
+  color: rgba(255,255,255,0.6);
+  flex-shrink: 0;
+}
+
+.sidebar .nav-link:hover {
+  background: rgba(255,255,255,0.12);
+  color: white;
+}
+
+.sidebar .nav-link:hover i {
+  color: var(--facholi-laranja);
+}
+
+.sidebar .nav-link.active {
+  background: var(--facholi-laranja);
+  color: white;
+  font-weight: 600;
+}
+
+.sidebar .nav-link.active i {
+  color: white;
+}
+
+.sidebar-footer {
+  padding: 0.6rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: auto;
+}
+
+/* ============================================================
+   Main Content
+   ============================================================ */
+.main-content {
+  margin-left: 248px;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: white;
+  border-bottom: 2px solid #e8f0e8;
+  padding: 0.7rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar-title {
+  font-size: 0.85rem;
+  color: var(--facholi-cinza-texto);
+  font-weight: 500;
+}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+}
+
+.card-header {
+  border-bottom: 1px solid #e8f0e8;
+}
+
+/* ============================================================
+   Botões customizados Facholi
+   ============================================================ */
+.btn-primary {
+  background-color: var(--facholi-verde-escuro) !important;
+  border-color: var(--facholi-verde-escuro) !important;
+  color: white !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--facholi-verde-medio) !important;
+  border-color: var(--facholi-verde-medio) !important;
+}
+
+.btn-facholi-laranja {
+  background-color: var(--facholi-laranja);
+  border-color: var(--facholi-laranja);
+  color: white;
+}
+.btn-facholi-laranja:hover {
+  background-color: var(--facholi-laranja-hover);
+  border-color: var(--facholi-laranja-hover);
+  color: white;
+}
+
+.btn-outline-primary {
+  color: var(--facholi-verde-escuro) !important;
+  border-color: var(--facholi-verde-escuro) !important;
+}
+.btn-outline-primary:hover {
+  background-color: var(--facholi-verde-escuro) !important;
+  color: white !important;
+}
+
+/* ============================================================
+   Badges e status
+   ============================================================ */
+.badge.bg-primary {
+  background-color: var(--facholi-verde-escuro) !important;
+}
+
+.badge.bg-success {
+  background-color: #27863a !important;
+}
+
+/* ============================================================
+   Tabelas
+   ============================================================ */
+.table-hover tbody tr:hover {
+  background-color: rgba(114, 184, 64, 0.07);
+}
+
+.table thead th {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--facholi-cinza-texto);
+  border-bottom-color: #d4e8d4;
+}
+
+.table-light {
+  background-color: #f5faf5 !important;
+}
+.table-light th {
+  background-color: #f5faf5 !important;
+}
+
+/* ============================================================
+   Preços
+   ============================================================ */
+.preco-praca    { color: #c0392b; font-weight: 600; }
+.preco-colocado { color: var(--facholi-verde-escuro); font-weight: 600; }
+
+/* ============================================================
+   Formulários
+   ============================================================ */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--facholi-verde-claro);
+  box-shadow: 0 0 0 0.2rem rgba(114, 184, 64, 0.2);
+}
+
+.form-check-input:checked {
+  background-color: var(--facholi-verde-escuro);
+  border-color: var(--facholi-verde-escuro);
+}
+
+.form-switch .form-check-input:checked {
+  background-color: var(--facholi-laranja);
+  border-color: var(--facholi-laranja);
+}
+
+/* ============================================================
+   Paginação
+   ============================================================ */
+.page-link {
+  color: var(--facholi-verde-escuro);
+}
+.page-item.active .page-link {
+  background-color: var(--facholi-verde-escuro);
+  border-color: var(--facholi-verde-escuro);
+}
+
+/* ============================================================
+   Login page
+   ============================================================ */
+.login-page {
+  background: linear-gradient(135deg, #1a5f2a 0%, #14491f 50%, #0d3317 100%);
+  min-height: 100vh;
+}
+
+.login-card {
+  border-radius: 14px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  border: none;
+  overflow: hidden;
+}
+
+.login-header {
+  background: linear-gradient(135deg, #1a5f2a, #237a37);
+  padding: 2rem 2rem 1.5rem;
+  text-align: center;
+}
+
+.login-header img {
+  filter: brightness(0) invert(1);
+  height: 44px;
+  width: auto;
+}
+
+.login-subtitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  margin-top: 0.4rem;
+}
+
+/* ============================================================
+   Progress bars
+   ============================================================ */
+.progress-bar {
+  background-color: var(--facholi-verde-escuro);
+}
+.progress-bar.bg-success {
+  background-color: var(--facholi-laranja) !important;
+}
+
+/* ============================================================
+   Misc
+   ============================================================ */
+.input-preco {
+  max-width: 130px;
+  text-align: right;
+}
+
+.alert-info {
+  background-color: #e8f5e9;
+  border-color: #c8e6c9;
+  color: #1b5e20;
+}
+
+/* ============================================================
+   Responsivo
+   ============================================================ */
+@media (max-width: 768px) {
+  .sidebar { width: 58px; }
+  .sidebar .nav-link span,
+  .sidebar-brand .brand-text,
+  .sidebar-system-label,
+  .sidebar-section { display: none; }
+  .sidebar-brand img { height: 28px; }
+  .main-content { margin-left: 58px; }
+}

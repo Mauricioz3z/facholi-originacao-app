@@ -1,0 +1,526 @@
+/* ============================================================
+   PrecoBoi PWA — Mobile-first, acessível para 50+ anos
+   Alta legibilidade, alto contraste, alvos de toque grandes
+   ============================================================ */
+
+/* ---------- variáveis PWA ---------- */
+:root {
+  --pwa-verde:        #1a5f2a;
+  --pwa-verde-medio:  #237a37;
+  --pwa-verde-claro:  #72b840;
+  --pwa-laranja:      #f7941d;
+  --pwa-texto:        #1a1a1a;
+  --pwa-texto-suave:  #555;
+  --pwa-fundo:        #f0f4f0;
+  --pwa-card:         #ffffff;
+  --pwa-borda:        #d0e4d0;
+  --pwa-tap:          48px;   /* altura mínima de toque */
+  --pwa-fonte-base:   18px;
+  --pwa-fonte-titulo: 22px;
+  --pwa-fonte-grande: 26px;
+  --pwa-radius:       14px;
+  --pwa-sombra:       0 2px 10px rgba(0,0,0,0.10);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---------- base ---------- */
+.pwa-root {
+  font-size: var(--pwa-fonte-base);
+  color: var(--pwa-texto);
+  background: var(--pwa-fundo);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- topbar PWA ---------- */
+.pwa-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--pwa-verde);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  height: 58px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+.pwa-topbar img {
+  filter: brightness(0) invert(1);
+  height: 28px;
+}
+
+.pwa-topbar-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  flex: 1;
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+.pwa-topbar-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.3rem;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pwa-topbar-btn:active { background: rgba(255,255,255,0.15); }
+
+/* ---------- scroll content ---------- */
+.pwa-content {
+  padding: 1rem 1rem calc(var(--pwa-tap) + 1.5rem + var(--safe-bottom));
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* ---------- bottom nav ---------- */
+.pwa-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: white;
+  border-top: 2px solid var(--pwa-borda);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+}
+
+.pwa-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  color: #999;
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  min-height: 58px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pwa-nav-item i {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.pwa-nav-item.active {
+  color: var(--pwa-verde);
+}
+
+.pwa-nav-item.active i {
+  color: var(--pwa-verde);
+}
+
+/* ---------- cards ---------- */
+.pwa-card {
+  background: var(--pwa-card);
+  border-radius: var(--pwa-radius);
+  box-shadow: var(--pwa-sombra);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.pwa-card-header {
+  background: var(--pwa-verde);
+  color: white;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pwa-card-body {
+  padding: 1rem;
+}
+
+/* ---------- formulários ---------- */
+.pwa-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--pwa-texto-suave);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pwa-input,
+.pwa-select {
+  width: 100%;
+  height: var(--pwa-tap);
+  padding: 0 1rem;
+  font-size: var(--pwa-fonte-base);
+  border: 2px solid var(--pwa-borda);
+  border-radius: 10px;
+  background: white;
+  color: var(--pwa-texto);
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pwa-input:focus,
+.pwa-select:focus {
+  outline: none;
+  border-color: var(--pwa-verde-claro);
+  box-shadow: 0 0 0 3px rgba(114,184,64,0.2);
+}
+
+.pwa-select-wrap {
+  position: relative;
+}
+
+.pwa-select-wrap::after {
+  content: '\F282';
+  font-family: 'bootstrap-icons';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pwa-texto-suave);
+  pointer-events: none;
+  font-size: 1rem;
+}
+
+/* ---------- botões ---------- */
+.pwa-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
+  letter-spacing: 0.01em;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pwa-btn:active { transform: scale(0.97); }
+.pwa-btn:disabled { opacity: 0.55; }
+
+.pwa-btn-primary {
+  background: var(--pwa-verde);
+  color: white;
+}
+.pwa-btn-primary:active { background: var(--pwa-verde-medio); }
+
+.pwa-btn-laranja {
+  background: var(--pwa-laranja);
+  color: white;
+}
+
+.pwa-btn-outline {
+  background: white;
+  color: var(--pwa-verde);
+  border: 2px solid var(--pwa-verde);
+}
+
+.pwa-btn-danger {
+  background: #c0392b;
+  color: white;
+}
+
+.pwa-btn-sm {
+  min-height: 44px;
+  font-size: 0.9rem;
+  border-radius: 10px;
+}
+
+.pwa-btn-icon {
+  width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---------- FAB ---------- */
+.pwa-fab {
+  position: fixed;
+  bottom: calc(72px + var(--safe-bottom) + 1rem);
+  right: 1.2rem;
+  z-index: 150;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--pwa-laranja);
+  color: white;
+  border: none;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(247,148,29,0.45);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pwa-fab:active {
+  transform: scale(0.93);
+  box-shadow: 0 2px 8px rgba(247,148,29,0.3);
+}
+
+/* ---------- badges de status ---------- */
+.pwa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.pwa-badge-verde   { background: #e8f5e9; color: #1a5f2a; }
+.pwa-badge-laranja { background: #fff3e0; color: #c67000; }
+.pwa-badge-cinza   { background: #f5f5f5; color: #666;    }
+
+/* ---------- lista de negociações ---------- */
+.pwa-neg-card {
+  background: white;
+  border-radius: var(--pwa-radius);
+  box-shadow: var(--pwa-sombra);
+  padding: 1rem;
+  margin-bottom: 0.85rem;
+  border-left: 4px solid var(--pwa-verde-claro);
+  cursor: pointer;
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pwa-neg-card:active { transform: scale(0.985); }
+.pwa-neg-card.fechado { border-left-color: var(--pwa-laranja); }
+
+.pwa-neg-numero {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--pwa-verde);
+  letter-spacing: 0.05em;
+}
+
+.pwa-neg-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--pwa-texto);
+  margin: 2px 0 6px;
+}
+
+.pwa-neg-info {
+  font-size: 0.88rem;
+  color: var(--pwa-texto-suave);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ---------- tabela de simulação ---------- */
+.pwa-sim-row {
+  background: white;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.6rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.pwa-sim-categoria {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--pwa-texto);
+}
+
+.pwa-sim-faixa {
+  font-size: 0.8rem;
+  color: var(--pwa-texto-suave);
+  margin-bottom: 0.6rem;
+}
+
+.pwa-sim-valores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pwa-sim-campo {
+  background: #f8faf8;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.pwa-sim-campo-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pwa-texto-suave);
+  margin-bottom: 2px;
+}
+
+.pwa-sim-campo-valor {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.pwa-sim-campo-valor.colocado { color: var(--pwa-verde); }
+.pwa-sim-campo-valor.praca    { color: #c0392b; }
+
+.pwa-input-inline {
+  border: none;
+  border-bottom: 2px solid var(--pwa-borda);
+  border-radius: 0;
+  padding: 2px 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  width: 100%;
+  background: transparent;
+  color: var(--pwa-verde);
+}
+.pwa-input-inline:focus {
+  outline: none;
+  border-bottom-color: var(--pwa-verde-claro);
+}
+
+/* ---------- detalhe negociação ---------- */
+.pwa-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: var(--pwa-fonte-base);
+}
+.pwa-info-row:last-child { border-bottom: none; }
+.pwa-info-label {
+  color: var(--pwa-texto-suave);
+  font-size: 0.85rem;
+  flex: 0 0 40%;
+}
+.pwa-info-value {
+  font-weight: 700;
+  text-align: right;
+  flex: 1;
+}
+
+/* ---------- progress ---------- */
+.pwa-progress-wrap {
+  background: #e8f0e8;
+  border-radius: 20px;
+  height: 10px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+.pwa-progress-bar {
+  height: 100%;
+  border-radius: 20px;
+  background: linear-gradient(90deg, var(--pwa-verde-claro), var(--pwa-verde));
+  transition: width 0.4s ease;
+}
+
+/* ---------- toast / feedback ---------- */
+.pwa-toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  background: #1a1a1a;
+  color: white;
+  padding: 0.7rem 1.5rem;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  pointer-events: none;
+  animation: pwaToastIn 0.2s ease;
+  white-space: nowrap;
+}
+.pwa-toast.success { background: var(--pwa-verde); }
+.pwa-toast.error   { background: #c0392b; }
+
+@keyframes pwaToastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ---------- seção / título ---------- */
+.pwa-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--pwa-texto-suave);
+  margin: 1.2rem 0 0.5rem;
+}
+
+/* ---------- checkbox grande ---------- */
+.pwa-check-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pwa-check-card.checked {
+  border-color: var(--pwa-verde-claro);
+  background: #f0faf0;
+}
+
+.pwa-check-card input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  accent-color: var(--pwa-verde);
+}
+
+/* ---------- input numérico grande ---------- */
+.pwa-num-input {
+  width: 100%;
+  height: 50px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 0 0.75rem;
+  border: 2px solid var(--pwa-borda);
+  border-radius: 10px;
+  text-align: right;
+  color: var(--pwa-verde);
+}
+.pwa-num-input:focus {
+  outline: none;
+  border-color: var(--pwa-verde-claro);
+  box-shadow: 0 0 0 3px rgba(114,184,64,0.2);
+}
