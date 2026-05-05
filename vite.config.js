@@ -7,17 +7,35 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo-facholi.png'],
+      injectRegister: false, // registramos manualmente em src/main.js
+      includeAssets: ['logo-facholi.png', 'icon-192.png', 'icon-512.png', 'favicon.svg'],
       manifest: false, // usamos o manifest.json manual em /public
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: /^http:\/\/localhost:5000\/api\/.*/i,
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkFirst',
-            options: { cacheName: 'api-cache', networkTimeoutSeconds: 10 }
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 }
+            }
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 }
+            }
           }
         ]
+      },
+      devOptions: {
+        enabled: false
       }
     })
   ],
