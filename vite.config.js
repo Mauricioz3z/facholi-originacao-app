@@ -8,7 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false, // registramos manualmente em src/main.js
-      includeAssets: ['logo-facholi.png', 'icon-192.png', 'icon-512.png', 'favicon.svg'],
+      includeAssets: ['logo-facholi.png', 'icon-192.png', 'icon-512.png', 'favicon.svg', 'screenshot-mobile.png', 'screenshot-desktop.png'],
       manifest: false, // usamos o manifest.json manual em /public
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
