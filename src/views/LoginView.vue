@@ -42,7 +42,7 @@ async function entrar() {
       <!-- Cabeçalho com logo -->
       <div class="login-header">
         <img src="/logo-facholi.png" alt="Facholi" class="mb-2" />
-        <div class="login-subtitle">PrecoBoi — Gestão de Originação de Gado</div>
+        <div class="login-subtitle">Facholi — Gestão de Originação de Gado</div>
       </div>
 
       <!-- Corpo do formulário -->

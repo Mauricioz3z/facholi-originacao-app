@@ -73,7 +73,7 @@ onBeforeUnmount(() => {
 <template>
   <div v-if="showButton" class="install-banner">
     <div class="install-content">
-      <strong>Instalar PrecoBoi</strong>
+      <strong>Instalar Originação de Gado</strong>
       <small>Acesso rápido direto da tela inicial</small>
     </div>
     <div class="install-actions">

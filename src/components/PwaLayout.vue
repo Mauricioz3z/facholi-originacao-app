@@ -6,7 +6,7 @@ import { useAuthStore } from '../stores/auth'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const titulo = computed(() => route.meta?.title || 'PrecoBoi')
+const titulo = computed(() => route.meta?.title || 'Originação de Gado')
 
 function logout() {
   auth.logout()

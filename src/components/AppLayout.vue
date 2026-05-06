@@ -24,7 +24,7 @@ function isActive(path) {
       <!-- Brand -->
       <div class="sidebar-brand">
         <img src="/logo-facholi.png" alt="Facholi" class="d-block" />
-        <div class="sidebar-system-label mt-1">PrecoBoi — Originação</div>
+        <div class="sidebar-system-label mt-1">Originação de Gado</div>
       </div>
 
       <!-- Menu -->
@@ -135,7 +135,7 @@ function isActive(path) {
       <div class="topbar">
         <span class="topbar-title">
           <i class="bi bi-chevron-right me-1 text-muted small"></i>
-          {{ route.meta?.title || 'PrecoBoi' }}
+          {{ route.meta?.title || 'Originação de Gado' }}
         </span>
         <div class="d-flex align-items-center gap-2">
           <img src="/logo-facholi.png" alt="Facholi" style="height:22px;opacity:0.7" />
