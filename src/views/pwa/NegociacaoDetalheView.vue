@@ -2,6 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { negociacaoApi } from '../../services/api'
+import { useAuthStore } from '../../stores/auth'
+
+const auth = useAuthStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -9,6 +12,8 @@ const neg = ref(null)
 const carregando = ref(false)
 const salvandoEntrega = ref(false)
 const fechando = ref(false)
+const excluindo = ref(false)
+const confirmandoExclusao = ref(false)
 const erro = ref('')
 const entregaItens = ref([])
 const confirmandoFechamento = ref(false)
@@ -38,6 +43,19 @@ async function fechar() {
     erro.value = e.response?.data?.mensagem || 'Erro ao fechar negociação.'
   } finally {
     fechando.value = false
+  }
+}
+
+async function excluir() {
+  excluindo.value = true
+  confirmandoExclusao.value = false
+  try {
+    await negociacaoApi.excluir(route.params.id)
+    router.push('/app/negociacoes')
+  } catch (e) {
+    erro.value = e.response?.data?.mensagem || 'Erro ao excluir negociação.'
+  } finally {
+    excluindo.value = false
   }
 }
 
@@ -75,6 +93,11 @@ function fmtKg2(v) {
   if (!v && v !== 0) return '—'
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}/kg`
 }
+
+const podeGerenciar = computed(() => {
+  if (!neg.value) return false
+  return auth.isAdmin || neg.value.compradorId === auth.user?.id
+})
 
 const percentualTotal = computed(() => {
   if (!neg.value?.itens) return 0
@@ -118,12 +141,25 @@ onMounted(carregar)
         </span>
       </div>
 
+      <!-- Aviso de negociação de colega -->
+      <div
+        v-if="!podeGerenciar"
+        style="display:flex;gap:0.6rem;align-items:flex-start;padding:0.75rem 1rem;background:#fff7e6;border:1px solid #f7b955;border-radius:10px;margin-bottom:1rem;font-size:0.85rem;color:#7a5200"
+      >
+        <i class="bi bi-info-circle-fill" style="margin-top:2px"></i>
+        <span>Negociação de outro comprador — apenas visualização.</span>
+      </div>
+
       <!-- Informações gerais -->
       <div class="pwa-card">
         <div class="pwa-card-header">
           <i class="bi bi-info-circle-fill me-2"></i>Informações
         </div>
         <div class="pwa-card-body" style="padding:0">
+          <div class="pwa-info-row" style="padding:0.75rem 1rem">
+            <span class="pwa-info-label">Comprador</span>
+            <span class="pwa-info-value">{{ neg.compradorNome }}</span>
+          </div>
           <div class="pwa-info-row" style="padding:0.75rem 1rem">
             <span class="pwa-info-label">Corretor</span>
             <span class="pwa-info-value">{{ neg.corretorNome }}</span>
@@ -186,7 +222,7 @@ onMounted(carregar)
           <div style="margin:0.6rem 0 0.5rem">
             <label class="pwa-label">Qtd. Entregue</label>
             <input
-              v-if="entregaItem(item.id)"
+              v-if="podeGerenciar && entregaItem(item.id)"
               v-model.number="entregaItem(item.id).qtdEntregue"
               type="number"
               min="0"
@@ -194,6 +230,9 @@ onMounted(carregar)
               inputmode="numeric"
               class="pwa-num-input"
             />
+            <div v-else style="padding:0.5rem 0;font-weight:700;color:var(--pwa-texto)">
+              {{ item.qtdEntregue || 0 }} cabeças
+            </div>
           </div>
           <div class="pwa-progress-wrap">
             <div class="pwa-progress-bar" :style="{ width: (item.percentualConclusao || 0) + '%' }"></div>
@@ -211,6 +250,7 @@ onMounted(carregar)
         </div>
 
         <button
+          v-if="podeGerenciar"
           class="pwa-btn pwa-btn-primary"
           @click="salvarEntrega"
           :disabled="salvandoEntrega"
@@ -221,8 +261,8 @@ onMounted(carregar)
         </button>
       </template>
 
-      <!-- Fechar negociação (só para em andamento) -->
-      <template v-if="neg.status === 'EmNegociacao'">
+      <!-- Fechar negociação (só para em andamento e dono/admin) -->
+      <template v-if="neg.status === 'EmNegociacao' && podeGerenciar">
         <div
           v-if="erro"
           style="color:#c0392b;padding:0.75rem 1rem;background:#fdecea;border-radius:10px;margin-bottom:1rem;font-size:0.9rem"
@@ -231,6 +271,14 @@ onMounted(carregar)
         </div>
 
         <div v-if="!confirmandoFechamento" style="margin-top:0.5rem">
+          <button
+            class="pwa-btn pwa-btn-outline"
+            style="margin-bottom:0.5rem"
+            @click="router.push('/app/negociacoes/' + neg.id + '/editar')"
+          >
+            <i class="bi bi-pencil"></i>
+            Editar Negociação
+          </button>
           <button class="pwa-btn pwa-btn-laranja" @click="confirmandoFechamento = true">
             <i class="bi bi-lock-fill"></i>
             Fechar Negociação
@@ -262,6 +310,44 @@ onMounted(carregar)
           </div>
         </div>
       </template>
+
+      <!-- Excluir negociação (qualquer status, só dono/admin) -->
+      <div v-if="podeGerenciar && !confirmandoExclusao" style="margin-top:1rem">
+        <button
+          class="pwa-btn pwa-btn-outline"
+          style="color:#c0392b;border-color:#c0392b"
+          @click="confirmandoExclusao = true"
+          :disabled="excluindo"
+        >
+          <i class="bi bi-trash"></i>
+          Excluir Negociação
+        </button>
+      </div>
+
+      <div v-else-if="podeGerenciar" class="pwa-card" style="margin-top:1rem">
+        <div class="pwa-card-body">
+          <p style="font-size:1.05rem;font-weight:700;margin-bottom:0.75rem;text-align:center">
+            Confirmar exclusão?
+          </p>
+          <p style="font-size:0.9rem;color:var(--pwa-texto-suave);text-align:center;margin-bottom:1.5rem">
+            A negociação {{ neg.numero }} será excluída permanentemente.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <button
+              class="pwa-btn pwa-btn-outline"
+              @click="confirmandoExclusao = false"
+            >Cancelar</button>
+            <button
+              class="pwa-btn pwa-btn-danger"
+              @click="excluir"
+              :disabled="excluindo"
+            >
+              <span v-if="excluindo" class="spinner-border spinner-border-sm"></span>
+              <span v-else>Excluir</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -65,9 +65,24 @@ function fmtKg(v) {
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}`
 }
 
+function totalCabecas(neg) {
+  if (!neg?.itens?.length) return 0
+  return neg.itens.reduce((s, i) => s + (i.qtdNegociada || 0), 0)
+}
+
 function paginar(p) {
   filtros.value.pagina = p
   carregar()
+}
+
+async function excluir(neg) {
+  if (!confirm(`Confirma a exclusão da negociação ${neg.numero}? Esta ação não pode ser desfeita.`)) return
+  try {
+    await negociacaoApi.excluir(neg.id)
+    await carregar()
+  } catch (e) {
+    alert(e.response?.data?.mensagem || 'Erro ao excluir negociação.')
+  }
 }
 
 const totalPaginas = () => Math.ceil(total.value / filtros.value.tamanhoPagina)
@@ -138,6 +153,7 @@ onMounted(() => {
                 <th>Comprador</th>
                 <th>Corretor</th>
                 <th>Origem</th>
+                <th class="text-end">Cabeças</th>
                 <th>Criado em</th>
                 <th>Entrega Prev.</th>
                 <th></th>
@@ -150,15 +166,19 @@ onMounted(() => {
                 <td>{{ neg.compradorNome }}</td>
                 <td>{{ neg.corretorNome }}</td>
                 <td>{{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}</td>
+                <td class="text-end fw-semibold">{{ totalCabecas(neg).toLocaleString('pt-BR') }}</td>
                 <td class="text-muted small">{{ fmtData(neg.criadoEm) }}</td>
                 <td class="text-muted small">{{ fmtData(neg.dataPrevistaEntrega) }}</td>
                 <td class="text-end">
-                  <router-link :to="`/negociacoes/${neg.id}`" class="btn btn-sm btn-outline-primary me-1">
+                  <router-link :to="`/negociacoes/${neg.id}`" class="btn btn-sm btn-outline-primary me-1" title="Visualizar">
                     <i class="bi bi-eye"></i>
                   </router-link>
-                  <router-link v-if="neg.status === 'EmNegociacao'" :to="`/negociacoes/${neg.id}/editar`" class="btn btn-sm btn-outline-secondary">
+                  <router-link v-if="neg.status === 'EmNegociacao'" :to="`/negociacoes/${neg.id}/editar`" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </router-link>
+                  <button class="btn btn-sm btn-outline-danger" title="Excluir" @click="excluir(neg)">
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>

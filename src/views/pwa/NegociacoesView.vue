@@ -15,7 +15,6 @@ async function carregar() {
   carregando.value = true
   try {
     const res = await negociacaoApi.listar({
-      compradorId: auth.user?.id,
       status: statusFiltro.value !== 'Todos' ? statusFiltro.value : undefined,
       tamanhoPagina: 50
     })
@@ -26,9 +25,26 @@ async function carregar() {
   }
 }
 
+function ehMinha(neg) {
+  return neg.compradorId === auth.user?.id
+}
+
+function totalCabecas(neg) {
+  if (!neg?.itens?.length) return 0
+  return neg.itens.reduce((s, i) => s + (i.qtdNegociada || 0), 0)
+}
+
 function fmtData(d) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('pt-BR')
+}
+
+function percentualEntrega(neg) {
+  if (!neg?.itens?.length) return 0
+  const qtdNeg = neg.itens.reduce((s, i) => s + (i.qtdNegociada || 0), 0)
+  const qtdEnt = neg.itens.reduce((s, i) => s + (i.qtdEntregue || 0), 0)
+  if (qtdNeg === 0) return 0
+  return Math.round(qtdEnt / qtdNeg * 100)
 }
 
 function filtrar(status) {
@@ -83,7 +99,10 @@ onMounted(carregar)
       @click="router.push('/app/negociacoes/' + neg.id)"
     >
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-        <div class="pwa-neg-numero">{{ neg.numero }}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="pwa-neg-numero">{{ neg.numero }}</div>
+          <span v-if="ehMinha(neg)" class="pwa-badge pwa-badge-verde" style="font-size:0.65rem">MINHA</span>
+        </div>
         <span
           class="pwa-badge"
           :class="neg.status === 'Fechado' ? 'pwa-badge-laranja' : 'pwa-badge-verde'"
@@ -93,7 +112,23 @@ onMounted(carregar)
       </div>
       <div class="pwa-neg-titulo">{{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}</div>
       <div class="pwa-neg-info">
+        <i class="bi bi-person-circle"></i>
+        <span><strong style="color:var(--pwa-texto)">Comprador:</strong> {{ neg.compradorNome }}</span>
+      </div>
+      <div class="pwa-neg-info" style="margin-top:3px">
         <i class="bi bi-person"></i> {{ neg.corretorNome }}
+        <span style="margin-left:auto;font-weight:700;color:var(--pwa-texto)">
+          <i class="bi bi-collection-fill"></i> {{ totalCabecas(neg).toLocaleString('pt-BR') }} cab.
+        </span>
+      </div>
+      <div v-if="neg.status === 'Fechado'" style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:var(--pwa-texto-suave);margin-bottom:3px">
+          <span><i class="bi bi-truck me-1"></i>Entrega</span>
+          <span style="font-weight:700;color:var(--pwa-verde)">{{ percentualEntrega(neg) }}%</span>
+        </div>
+        <div class="pwa-progress-wrap" style="margin:0">
+          <div class="pwa-progress-bar" :style="{ width: percentualEntrega(neg) + '%' }"></div>
+        </div>
       </div>
       <div class="pwa-neg-info" style="margin-top:4px">
         <i class="bi bi-calendar3"></i> Entrega: {{ fmtData(neg.dataPrevistaEntrega) }}

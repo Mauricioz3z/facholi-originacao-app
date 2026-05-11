@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import {
   negociacaoApi, corretoresApi, municipiosOrigemApi,
   municipiosDestinoApi, categoriasApi
@@ -8,7 +8,11 @@ import {
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
+
+const editandoId = computed(() => route.params.id ? Number(route.params.id) : null)
+const modoEdicao = computed(() => !!editandoId.value)
 
 const corretores = ref([])
 const origens = ref([])
@@ -40,9 +44,6 @@ async function carregar() {
     destinos.value = d.data
     categorias.value = cat.data
 
-    const padrao = d.data.find(x => x.padrao)
-    if (padrao) form.value.municipioDestinoId = padrao.id
-
     form.value.itens = cat.data.map(c => ({
       categoriaId: c.id,
       categoriaNome: c.nome,
@@ -53,6 +54,37 @@ async function carregar() {
       qtdNegociada: '',
       precoNegociado: ''
     }))
+
+    if (modoEdicao.value) {
+      const res = await negociacaoApi.obter(editandoId.value)
+      const neg = res.data
+      if (neg.status === 'Fechado') {
+        erro.value = 'Esta negociação está fechada e não pode ser editada.'
+        return
+      }
+      if (!auth.isAdmin && neg.compradorId !== auth.user?.id) {
+        erro.value = 'Você só pode editar negociações que você mesmo criou.'
+        return
+      }
+      form.value.corretorId = neg.corretorId
+      form.value.municipioOrigemId = neg.municipioOrigemId
+      form.value.municipioDestinoId = neg.municipioDestinoId
+      form.value.dataPrevistaEntrega = neg.dataPrevistaEntrega
+        ? new Date(neg.dataPrevistaEntrega).toISOString().substring(0, 10)
+        : ''
+      for (const itemNeg of neg.itens) {
+        const itemForm = form.value.itens.find(i => i.categoriaId === itemNeg.categoriaId)
+        if (itemForm) {
+          itemForm.ativo = true
+          itemForm.qtdNegociada = itemNeg.qtdNegociada ?? ''
+          itemForm.precoNegociado = itemNeg.precoNegociado ?? ''
+          itemForm.pesoMedio = itemNeg.pesoMedio ?? itemForm.pesoMedio
+        }
+      }
+    } else {
+      const padrao = d.data.find(x => x.padrao)
+      if (padrao) form.value.municipioDestinoId = padrao.id
+    }
   } finally {
     carregando.value = false
   }
@@ -77,27 +109,39 @@ async function salvar() {
     }
   }
 
+  const payload = {
+    compradorId: auth.user?.id,
+    corretorId: Number(form.value.corretorId),
+    municipioOrigemId: Number(form.value.municipioOrigemId),
+    municipioDestinoId: Number(form.value.municipioDestinoId),
+    dataPrevistaEntrega: form.value.dataPrevistaEntrega || null,
+    itens: itensAtivos.map(i => ({
+      categoriaId: i.categoriaId,
+      qtdNegociada: i.qtdNegociada ? Number(i.qtdNegociada) : null,
+      precoNegociado: Number(i.precoNegociado),
+      pesoMedio: Number(i.pesoMedio)
+    }))
+  }
+
   salvando.value = true
   try {
-    const res = await negociacaoApi.criar({
-      compradorId: auth.user?.id,
-      corretorId: Number(form.value.corretorId),
-      municipioOrigemId: Number(form.value.municipioOrigemId),
-      municipioDestinoId: Number(form.value.municipioDestinoId),
-      dataPrevistaEntrega: form.value.dataPrevistaEntrega || null,
-      itens: itensAtivos.map(i => ({
-        categoriaId: i.categoriaId,
-        qtdNegociada: i.qtdNegociada ? Number(i.qtdNegociada) : null,
-        precoNegociado: Number(i.precoNegociado),
-        pesoMedio: Number(i.pesoMedio)
-      }))
-    })
-    router.push('/app/negociacoes/' + res.data.id)
+    if (modoEdicao.value) {
+      await negociacaoApi.atualizar(editandoId.value, payload)
+      router.push('/app/negociacoes/' + editandoId.value)
+    } else {
+      const res = await negociacaoApi.criar(payload)
+      router.push('/app/negociacoes/' + res.data.id)
+    }
   } catch (e) {
     erro.value = e.response?.data?.mensagem || 'Erro ao salvar negociação.'
   } finally {
     salvando.value = false
   }
+}
+
+function voltar() {
+  if (modoEdicao.value) router.push('/app/negociacoes/' + editandoId.value)
+  else router.push('/app/negociacoes')
 }
 
 onMounted(carregar)
@@ -108,11 +152,13 @@ onMounted(carregar)
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.2rem">
       <button
         class="pwa-btn pwa-btn-outline pwa-btn-icon"
-        @click="router.push('/app/negociacoes')"
+        @click="voltar"
       >
         <i class="bi bi-arrow-left"></i>
       </button>
-      <div style="font-size:1.15rem;font-weight:700">Nova Negociação</div>
+      <div style="font-size:1.15rem;font-weight:700">
+        {{ modoEdicao ? 'Editar Negociação' : 'Nova Negociação' }}
+      </div>
     </div>
 
     <div v-if="carregando" class="text-center py-5">
@@ -245,13 +291,13 @@ onMounted(carregar)
       >
         <span v-if="salvando" class="spinner-border spinner-border-sm"></span>
         <i v-else class="bi bi-check-lg"></i>
-        Criar Negociação
+        {{ modoEdicao ? 'Salvar Alterações' : 'Criar Negociação' }}
       </button>
 
       <button
         type="button"
         class="pwa-btn pwa-btn-outline"
-        @click="router.push('/app/negociacoes')"
+        @click="voltar"
       >
         Cancelar
       </button>

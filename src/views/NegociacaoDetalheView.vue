@@ -9,6 +9,7 @@ const neg = ref(null)
 const carregando = ref(false)
 const salvandoEntrega = ref(false)
 const fechando = ref(false)
+const excluindo = ref(false)
 const erro = ref('')
 const entregaItens = ref([])
 
@@ -36,6 +37,19 @@ async function fechar() {
     erro.value = e.response?.data?.mensagem || 'Erro ao fechar negociação.'
   } finally {
     fechando.value = false
+  }
+}
+
+async function excluir() {
+  if (!confirm(`Confirma a exclusão da negociação ${neg.value?.numero}? Esta ação não pode ser desfeita.`)) return
+  excluindo.value = true
+  try {
+    await negociacaoApi.excluir(route.params.id)
+    router.push('/negociacoes')
+  } catch (e) {
+    erro.value = e.response?.data?.mensagem || 'Erro ao excluir negociação.'
+  } finally {
+    excluindo.value = false
   }
 }
 
@@ -116,6 +130,10 @@ onMounted(carregar)
           <button v-if="neg.status === 'EmNegociacao'" class="btn btn-success btn-sm" @click="fechar" :disabled="fechando">
             <span v-if="fechando" class="spinner-border spinner-border-sm me-1"></span>
             <i v-else class="bi bi-check-circle me-1"></i> Fechar Negociação
+          </button>
+          <button class="btn btn-outline-danger btn-sm" @click="excluir" :disabled="excluindo">
+            <span v-if="excluindo" class="spinner-border spinner-border-sm me-1"></span>
+            <i v-else class="bi bi-trash me-1"></i> Excluir
           </button>
         </div>
       </div>

@@ -14,8 +14,8 @@ const recentes = ref([])
 async function carregar() {
   try {
     const [abertas, encerradas] = await Promise.all([
-      negociacaoApi.listar({ compradorId: auth.user?.id, status: 'EmNegociacao', tamanhoPagina: 5 }),
-      negociacaoApi.listar({ compradorId: auth.user?.id, status: 'Fechado', tamanhoPagina: 1 })
+      negociacaoApi.listar({ status: 'EmNegociacao', tamanhoPagina: 5 }),
+      negociacaoApi.listar({ status: 'Fechado', tamanhoPagina: 1 })
     ])
     emAndamento.value = abertas.data.total
     fechadas.value = encerradas.data.total
@@ -23,6 +23,10 @@ async function carregar() {
   } finally {
     carregando.value = false
   }
+}
+
+function ehMinha(neg) {
+  return neg.compradorId === auth.user?.id
 }
 
 function fmtData(d) {
@@ -44,7 +48,7 @@ onMounted(carregar)
         <div style="font-size:1.25rem;font-weight:700;color:var(--pwa-texto)">
           Olá, {{ auth.nomeUsuario.split(' ')[0] }}!
         </div>
-        <div style="font-size:0.9rem;color:var(--pwa-texto-suave)">Resumo das suas negociações</div>
+        <div style="font-size:0.9rem;color:var(--pwa-texto-suave)">Resumo das negociações da equipe</div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem">
@@ -80,9 +84,16 @@ onMounted(carregar)
         class="pwa-neg-card"
         @click="router.push('/app/negociacoes/' + neg.id)"
       >
-        <div class="pwa-neg-numero">{{ neg.numero }}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div class="pwa-neg-numero">{{ neg.numero }}</div>
+          <span v-if="ehMinha(neg)" class="pwa-badge pwa-badge-verde" style="font-size:0.65rem">MINHA</span>
+        </div>
         <div class="pwa-neg-titulo">{{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}</div>
         <div class="pwa-neg-info">
+          <i class="bi bi-person-circle"></i>
+          <span><strong style="color:var(--pwa-texto)">Comprador:</strong> {{ neg.compradorNome }}</span>
+        </div>
+        <div class="pwa-neg-info" style="margin-top:3px">
           <i class="bi bi-person"></i>{{ neg.corretorNome }}
           <span style="margin-left:auto">
             <i class="bi bi-calendar3"></i> {{ fmtData(neg.dataPrevistaEntrega) }}

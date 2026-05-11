@@ -72,6 +72,11 @@ function fmtKg(v) {
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}`
 }
 
+function fmtArroba(v) {
+  if (v === null || v === undefined || v === '') return null
+  return `@ R$ ${(Number(v) * 30).toFixed(2).replace('.', ',')}`
+}
+
 function fmtKg4(v) {
   if (!v && v !== 0) return '—'
   return `R$ ${Number(v).toFixed(4).replace('.', ',')}/kg`
@@ -167,6 +172,9 @@ onMounted(carregar)
                     <span class="preco-praca fs-6">
                       {{ item.precoPraca !== null ? fmtKg(item.precoPraca) : '—' }}
                     </span>
+                    <div v-if="item.precoPraca !== null" class="text-muted" style="font-size:0.75rem;line-height:1;margin-top:2px">
+                      {{ fmtArroba(item.precoPraca) }}
+                    </div>
                   </td>
                   <td class="text-end text-muted small">{{ fmtKg4(item.freteKg) }}</td>
                 </tr>

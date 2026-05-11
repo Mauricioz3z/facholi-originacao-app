@@ -32,10 +32,38 @@ async function simular() {
   itens.value = []
   try {
     const res = await simulacaoApi.rapida(origemId.value, destinoId.value)
-    itens.value = res.data.itens.map(i => ({ ...i, precoColocado: '', precoPraca: null }))
+    itens.value = res.data.itens.map(i => ({
+      ...i,
+      precoColocado: '',
+      precoColocadoMask: '',
+      precoPraca: null
+    }))
   } finally {
     calculando.value = false
   }
+}
+
+function aplicarMascaraBRL(valor) {
+  const digits = String(valor ?? '').replace(/\D/g, '')
+  if (!digits) return ''
+  const cents = parseInt(digits, 10)
+  return (cents / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
+function valorNumericoBRL(mask) {
+  const digits = String(mask ?? '').replace(/\D/g, '')
+  if (!digits) return ''
+  return parseInt(digits, 10) / 100
+}
+
+function aoDigitarColocado(item, evento) {
+  const mascarado = aplicarMascaraBRL(evento.target.value)
+  item.precoColocadoMask = mascarado
+  item.precoColocado = valorNumericoBRL(mascarado)
+  calcular(item)
 }
 
 async function calcular(item) {
@@ -56,6 +84,11 @@ async function calcular(item) {
 function fmtR(v) {
   if (v === null || v === undefined || v === '') return '—'
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}`
+}
+
+function fmtArroba(v) {
+  if (v === null || v === undefined || v === '') return null
+  return `@ R$ ${(Number(v) * 30).toFixed(2).replace('.', ',')}`
 }
 
 function fmtFrete(v) {
@@ -147,22 +180,32 @@ onMounted(carregar)
             <label class="pwa-label" style="color:var(--pwa-verde)">
               R$/kg Colocado — informe o preço
             </label>
-            <input
-              v-model="item.precoColocado"
-              type="number"
-              step="0.01"
-              min="0"
-              inputmode="decimal"
-              class="pwa-num-input"
-              placeholder="0,00"
-              @input="calcular(item)"
-            />
+            <div style="position:relative">
+              <span
+                style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--pwa-texto-suave);font-weight:700;pointer-events:none"
+              >R$</span>
+              <input
+                :value="item.precoColocadoMask"
+                type="text"
+                inputmode="decimal"
+                class="pwa-num-input"
+                style="padding-left:38px"
+                placeholder="0,00"
+                @input="aoDigitarColocado(item, $event)"
+              />
+            </div>
           </div>
 
           <div class="pwa-sim-valores">
             <div class="pwa-sim-campo">
               <div class="pwa-sim-campo-label">R$/kg Praça</div>
               <div class="pwa-sim-campo-valor praca">{{ fmtR(item.precoPraca) }}</div>
+              <div
+                v-if="item.precoPraca !== null"
+                style="font-size:0.78rem;color:var(--pwa-texto-suave);margin-top:2px;line-height:1"
+              >
+                {{ fmtArroba(item.precoPraca) }}
+              </div>
             </div>
             <div class="pwa-sim-campo">
               <div class="pwa-sim-campo-label">Frete/kg</div>

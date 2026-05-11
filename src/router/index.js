@@ -63,6 +63,12 @@ const routes = [
         meta: { pwa: true, title: 'Nova Negociação' }
       },
       {
+        path: 'negociacoes/:id/editar',
+        name: 'PwaEditarNegociacao',
+        component: () => import('../views/pwa/NegociacaoFormView.vue'),
+        meta: { pwa: true, title: 'Editar Negociação' }
+      },
+      {
         path: 'negociacoes/:id',
         name: 'PwaDetalheNegociacao',
         component: () => import('../views/pwa/NegociacaoDetalheView.vue'),

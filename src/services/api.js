@@ -44,6 +44,7 @@ export const negociacaoApi = {
   criar: (data) => api.post('/negociacoes', data),
   atualizar: (id, data) => api.put(`/negociacoes/${id}`, data),
   fechar: (id) => api.post(`/negociacoes/${id}/fechar`),
+  excluir: (id) => api.delete(`/negociacoes/${id}`),
   atualizarEntrega: (data) => api.put('/negociacoes/entrega', data),
 }
 
