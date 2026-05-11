@@ -29,15 +29,35 @@ async function carregar() {
 async function simular() {
   if (!origemId.value || !destinoId.value) return
   calculando.value = true
+
+  const precosAnteriores = {}
+  for (const item of itens.value) {
+    if (item.precoColocado) {
+      precosAnteriores[item.categoriaId] = {
+        precoColocado: item.precoColocado,
+        precoColocadoMask: item.precoColocadoMask
+      }
+    }
+  }
+
   itens.value = []
   try {
     const res = await simulacaoApi.rapida(origemId.value, destinoId.value)
-    itens.value = res.data.itens.map(i => ({
-      ...i,
-      precoColocado: '',
-      precoColocadoMask: '',
-      precoPraca: null
-    }))
+    itens.value = res.data.itens.map(i => {
+      const anterior = precosAnteriores[i.categoriaId]
+      return {
+        ...i,
+        precoColocado: anterior?.precoColocado ?? '',
+        precoColocadoMask: anterior?.precoColocadoMask ?? '',
+        precoPraca: null
+      }
+    })
+
+    await Promise.all(
+      itens.value
+        .filter(it => it.precoColocado)
+        .map(it => calcular(it))
+    )
   } finally {
     calculando.value = false
   }

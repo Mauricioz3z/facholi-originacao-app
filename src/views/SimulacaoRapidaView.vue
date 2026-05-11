@@ -32,14 +32,28 @@ async function carregar() {
 async function iniciarSimulacao() {
   if (!origemId.value || !destinoId.value) return
   calculando.value = true
+
+  const precosAnteriores = {}
+  for (const item of itens.value) {
+    if (item.precoColocado) {
+      precosAnteriores[item.categoriaId] = item.precoColocado
+    }
+  }
+
   try {
     const res = await simulacaoApi.rapida(origemId.value, destinoId.value)
     itens.value = res.data.itens.map(i => ({
       ...i,
-      precoColocado: '',
+      precoColocado: precosAnteriores[i.categoriaId] ?? '',
       precoPraca: null,
       freteKg: i.freteKg
     }))
+
+    await Promise.all(
+      itens.value
+        .filter(it => it.precoColocado)
+        .map(it => calcularItem(it))
+    )
   } finally {
     calculando.value = false
   }

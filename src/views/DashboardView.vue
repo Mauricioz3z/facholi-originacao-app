@@ -16,10 +16,37 @@ const filtros = ref({
   status: 'Todos'
 })
 
-const expandidos = ref(new Set())
+const expandidosComprador = ref(new Set())
+const expandidosCorretor = ref(new Set())
+const negociacoesPorComprador = ref({})
+const carregandoNegociacoes = ref(new Set())
+
+function calcularAgregadosCorretor(categorias) {
+  let qtd = 0
+  let pesoQtd = 0
+  let numNeg = 0
+  let numCol = 0
+  for (const c of categorias) {
+    const q = Number(c.qtd_total) || 0
+    const peso = Number(c.peso_medio) || 0
+    qtd += q
+    pesoQtd += q * peso
+    numNeg += q * peso * (Number(c.preco_negociado_medio) || 0)
+    numCol += q * peso * (Number(c.preco_colocado_medio) || 0)
+  }
+  return {
+    qtdTotal: qtd,
+    precoNegociadoMedio: pesoQtd > 0 ? numNeg / pesoQtd : null,
+    precoColocadoMedio: pesoQtd > 0 ? numCol / pesoQtd : null,
+    pesoMedio: qtd > 0 ? pesoQtd / qtd : null
+  }
+}
 
 async function carregarDados() {
   carregando.value = true
+  expandidosComprador.value = new Set()
+  expandidosCorretor.value = new Set()
+  negociacoesPorComprador.value = {}
   try {
     const params = {
       compradorId: filtros.value.compradorId || undefined,
@@ -32,15 +59,21 @@ async function carregarDados() {
       compradores.value = res.data
     } else {
       const res = await dashboardApi.porCorretor(params)
-      // Agrupar por corretor
       const grupos = {}
       for (const row of res.data) {
         if (!grupos[row.corretor_id]) {
-          grupos[row.corretor_id] = { corretor_id: row.corretor_id, corretor_nome: row.corretor_nome, categorias: [] }
+          grupos[row.corretor_id] = {
+            corretor_id: row.corretor_id,
+            corretor_nome: row.corretor_nome,
+            categorias: []
+          }
         }
         grupos[row.corretor_id].categorias.push(row)
       }
-      corretores.value = Object.values(grupos)
+      corretores.value = Object.values(grupos).map(g => ({
+        ...g,
+        agregados: calcularAgregadosCorretor(g.categorias)
+      }))
     }
   } finally {
     carregando.value = false
@@ -56,9 +89,35 @@ async function carregarFiltros() {
   listaCorretores.value = c.data
 }
 
-function toggleExpansao(id) {
-  if (expandidos.value.has(id)) expandidos.value.delete(id)
-  else expandidos.value.add(id)
+async function toggleExpansaoComprador(compradorId) {
+  if (expandidosComprador.value.has(compradorId)) {
+    expandidosComprador.value.delete(compradorId)
+    return
+  }
+  expandidosComprador.value.add(compradorId)
+  if (negociacoesPorComprador.value[compradorId]) return
+
+  carregandoNegociacoes.value.add(compradorId)
+  try {
+    const params = {
+      status: filtros.value.status !== 'Todos' ? filtros.value.status : undefined,
+      uf: filtros.value.uf || undefined,
+      corretorId: filtros.value.corretorId || undefined,
+      tamanhoPagina: 100
+    }
+    const res = await dashboardApi.negociacoesPorComprador(compradorId, params)
+    negociacoesPorComprador.value = {
+      ...negociacoesPorComprador.value,
+      [compradorId]: res.data.items
+    }
+  } finally {
+    carregandoNegociacoes.value.delete(compradorId)
+  }
+}
+
+function toggleExpansaoCorretor(corretorId) {
+  if (expandidosCorretor.value.has(corretorId)) expandidosCorretor.value.delete(corretorId)
+  else expandidosCorretor.value.add(corretorId)
 }
 
 function fmt(v) {
@@ -69,6 +128,24 @@ function fmt(v) {
 function fmtKg(v) {
   if (!v && v !== 0) return '—'
   return `R$ ${Number(v).toFixed(4).replace('.', ',')}/kg`
+}
+
+function fmtData(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('pt-BR')
+}
+
+function totalCabecasNeg(neg) {
+  if (!neg?.itens?.length) return 0
+  return neg.itens.reduce((s, i) => s + (i.qtdNegociada || 0), 0)
+}
+
+function statusBadge(s) {
+  return s === 'Fechado' ? 'badge bg-success' : 'badge bg-warning text-dark'
+}
+
+function statusLabel(s) {
+  return s === 'Fechado' ? 'Fechado' : 'Em Negociação'
 }
 
 onMounted(() => {
@@ -134,7 +211,7 @@ onMounted(() => {
       </div>
       <div v-else class="card">
         <div class="card-body p-0">
-          <table class="table table-hover mb-0">
+          <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
               <tr>
                 <th>Comprador</th>
@@ -143,21 +220,64 @@ onMounted(() => {
                 <th class="text-end">R$/kg Negociado (méd.)</th>
                 <th class="text-end">R$/kg Colocado (méd.)</th>
                 <th class="text-end">Peso Médio (kg)</th>
-                <th></th>
+                <th class="text-center" style="width:40px"></th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in compradores" :key="row.comprador_id" @click="toggleExpansao(row.comprador_id)" style="cursor:pointer">
-                <td class="fw-semibold">{{ row.comprador_nome }}</td>
-                <td class="text-end">{{ row.total_negociacoes }}</td>
-                <td class="text-end">{{ row.qtd_total?.toLocaleString('pt-BR') || '—' }}</td>
-                <td class="text-end preco-praca">{{ fmtKg(row.preco_negociado_medio) }}</td>
-                <td class="text-end preco-colocado">{{ fmtKg(row.preco_colocado_medio) }}</td>
-                <td class="text-end">{{ row.peso_medio ? Number(row.peso_medio).toFixed(1).replace('.', ',') + ' kg' : '—' }}</td>
-                <td class="text-center">
-                  <i :class="expandidos.has(row.comprador_id) ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
-                </td>
-              </tr>
+              <template v-for="row in compradores" :key="row.comprador_id">
+                <tr @click="toggleExpansaoComprador(row.comprador_id)" style="cursor:pointer">
+                  <td class="fw-semibold">{{ row.comprador_nome }}</td>
+                  <td class="text-end">{{ row.total_negociacoes }}</td>
+                  <td class="text-end">{{ row.qtd_total?.toLocaleString('pt-BR') || '—' }}</td>
+                  <td class="text-end preco-praca">{{ fmtKg(row.preco_negociado_medio) }}</td>
+                  <td class="text-end preco-colocado">{{ fmtKg(row.preco_colocado_medio) }}</td>
+                  <td class="text-end">{{ row.peso_medio ? Number(row.peso_medio).toFixed(1).replace('.', ',') + ' kg' : '—' }}</td>
+                  <td class="text-center">
+                    <i :class="expandidosComprador.has(row.comprador_id) ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
+                  </td>
+                </tr>
+                <tr v-if="expandidosComprador.has(row.comprador_id)">
+                  <td colspan="7" class="bg-light p-3">
+                    <div v-if="carregandoNegociacoes.has(row.comprador_id)" class="text-center py-3">
+                      <div class="spinner-border spinner-border-sm text-primary"></div>
+                      <span class="ms-2 text-muted small">Carregando negociações...</span>
+                    </div>
+                    <div v-else-if="!negociacoesPorComprador[row.comprador_id]?.length" class="text-center text-muted small py-2">
+                      Nenhuma negociação encontrada para este comprador.
+                    </div>
+                    <table v-else class="table table-sm mb-0">
+                      <thead>
+                        <tr class="text-muted small">
+                          <th>Número</th>
+                          <th>Status</th>
+                          <th>Corretor</th>
+                          <th>Origem</th>
+                          <th class="text-end">Cabeças</th>
+                          <th>Criado em</th>
+                          <th>Entrega Prev.</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="neg in negociacoesPorComprador[row.comprador_id]" :key="neg.id">
+                          <td class="fw-semibold">{{ neg.numero }}</td>
+                          <td><span :class="statusBadge(neg.status)">{{ statusLabel(neg.status) }}</span></td>
+                          <td>{{ neg.corretorNome }}</td>
+                          <td>{{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}</td>
+                          <td class="text-end fw-semibold">{{ totalCabecasNeg(neg).toLocaleString('pt-BR') }}</td>
+                          <td class="text-muted small">{{ fmtData(neg.criadoEm) }}</td>
+                          <td class="text-muted small">{{ fmtData(neg.dataPrevistaEntrega) }}</td>
+                          <td class="text-end">
+                            <router-link :to="`/negociacoes/${neg.id}`" class="btn btn-sm btn-outline-primary" @click.stop>
+                              <i class="bi bi-eye"></i>
+                            </router-link>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -172,34 +292,60 @@ onMounted(() => {
       <div v-else-if="corretores.length === 0" class="card">
         <div class="card-body text-center text-muted py-5">Nenhuma negociação encontrada.</div>
       </div>
-      <div v-else>
-        <div v-for="cor in corretores" :key="cor.corretor_id" class="card mb-3">
-          <div class="card-header bg-white fw-semibold d-flex justify-content-between">
-            <span>{{ cor.corretor_nome }}</span>
-            <span class="text-muted small">{{ cor.categorias.length }} categoria(s)</span>
-          </div>
-          <div class="card-body p-0">
-            <table class="table table-sm mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Categoria</th>
-                  <th class="text-end">Qtd. (cabeças)</th>
-                  <th class="text-end">R$/kg Negociado</th>
-                  <th class="text-end">R$/kg Colocado</th>
-                  <th class="text-end">Peso Médio</th>
+      <div v-else class="card">
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Corretor</th>
+                <th class="text-end">Categorias</th>
+                <th class="text-end">Qtd. Total (cabeças)</th>
+                <th class="text-end">R$/kg Negociado (méd.)</th>
+                <th class="text-end">R$/kg Colocado (méd.)</th>
+                <th class="text-end">Peso Médio (kg)</th>
+                <th class="text-center" style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="cor in corretores" :key="cor.corretor_id">
+                <tr @click="toggleExpansaoCorretor(cor.corretor_id)" style="cursor:pointer">
+                  <td class="fw-semibold">{{ cor.corretor_nome }}</td>
+                  <td class="text-end">{{ cor.categorias.length }}</td>
+                  <td class="text-end">{{ cor.agregados.qtdTotal.toLocaleString('pt-BR') }}</td>
+                  <td class="text-end preco-praca">{{ fmtKg(cor.agregados.precoNegociadoMedio) }}</td>
+                  <td class="text-end preco-colocado">{{ fmtKg(cor.agregados.precoColocadoMedio) }}</td>
+                  <td class="text-end">{{ cor.agregados.pesoMedio ? cor.agregados.pesoMedio.toFixed(1).replace('.', ',') + ' kg' : '—' }}</td>
+                  <td class="text-center">
+                    <i :class="expandidosCorretor.has(cor.corretor_id) ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                <tr v-for="cat in cor.categorias" :key="cat.categoria">
-                  <td>{{ cat.categoria }}</td>
-                  <td class="text-end">{{ cat.qtd_total?.toLocaleString('pt-BR') || '—' }}</td>
-                  <td class="text-end preco-praca">{{ fmtKg(cat.preco_negociado_medio) }}</td>
-                  <td class="text-end preco-colocado">{{ fmtKg(cat.preco_colocado_medio) }}</td>
-                  <td class="text-end">{{ cat.peso_medio ? Number(cat.peso_medio).toFixed(1).replace('.', ',') + ' kg' : '—' }}</td>
+                <tr v-if="expandidosCorretor.has(cor.corretor_id)">
+                  <td colspan="7" class="bg-light p-3">
+                    <table class="table table-sm mb-0">
+                      <thead>
+                        <tr class="text-muted small">
+                          <th>Categoria</th>
+                          <th class="text-end">Qtd. (cabeças)</th>
+                          <th class="text-end">R$/kg Negociado</th>
+                          <th class="text-end">R$/kg Colocado</th>
+                          <th class="text-end">Peso Médio</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="cat in cor.categorias" :key="cat.categoria">
+                          <td>{{ cat.categoria }}</td>
+                          <td class="text-end">{{ cat.qtd_total?.toLocaleString('pt-BR') || '—' }}</td>
+                          <td class="text-end preco-praca">{{ fmtKg(cat.preco_negociado_medio) }}</td>
+                          <td class="text-end preco-colocado">{{ fmtKg(cat.preco_colocado_medio) }}</td>
+                          <td class="text-end">{{ cat.peso_medio ? Number(cat.peso_medio).toFixed(1).replace('.', ',') + ' kg' : '—' }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
+              </template>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
