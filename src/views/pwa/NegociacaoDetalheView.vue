@@ -135,7 +135,7 @@ onMounted(carregar)
         </div>
         <span
           class="pwa-badge"
-          :class="neg.status === 'Fechado' ? 'pwa-badge-laranja' : 'pwa-badge-verde'"
+          :class="neg.status === 'Fechado' ? 'pwa-badge-verde' : 'pwa-badge-laranja'"
         >
           {{ neg.status === 'Fechado' ? 'Fechado' : 'Em Andamento' }}
         </span>

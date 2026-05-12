@@ -57,7 +57,7 @@ async function carregarFiltros() {
 }
 
 function statusBadge(s) {
-  return s === 'Fechado' ? 'badge bg-success' : 'badge bg-warning text-dark'
+  return s === 'Fechado' ? 'badge bg-success' : 'badge badge-andamento'
 }
 
 function statusLabel(s) {

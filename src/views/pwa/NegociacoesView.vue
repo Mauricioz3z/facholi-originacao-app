@@ -146,9 +146,9 @@ onMounted(carregar)
         </div>
         <span
           class="pwa-badge"
-          :class="neg.status !== 'Fechado' ? 'pwa-badge-verde'
+          :class="neg.status !== 'Fechado' ? 'pwa-badge-laranja'
                 : percentualEntrega(neg) >= 100 ? 'pwa-badge-cinza'
-                : 'pwa-badge-laranja'"
+                : 'pwa-badge-verde'"
         >
           {{ neg.status !== 'Fechado' ? 'Em Andamento'
            : percentualEntrega(neg) >= 100 ? 'Concluído'

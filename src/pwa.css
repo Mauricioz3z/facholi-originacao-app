@@ -313,13 +313,13 @@
   box-shadow: var(--pwa-sombra);
   padding: 1rem;
   margin-bottom: 0.85rem;
-  border-left: 4px solid var(--pwa-verde-claro);
+  border-left: 4px solid var(--pwa-laranja);
   cursor: pointer;
   transition: transform 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
 .pwa-neg-card:active { transform: scale(0.985); }
-.pwa-neg-card.fechado   { border-left-color: var(--pwa-laranja); }
+.pwa-neg-card.fechado   { border-left-color: var(--pwa-verde); }
 .pwa-neg-card.concluido {
   border-left-color: #bdbdbd;
   background: #f7f7f7;

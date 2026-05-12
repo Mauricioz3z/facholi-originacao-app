@@ -12,6 +12,12 @@
   animation: spin 0.9s linear infinite;
 }
 
+/* Badge laranja para status "Em Andamento" (consistência com PWA) */
+.badge.badge-andamento {
+  background-color: #e67e22 !important;
+  color: white !important;
+}
+
 :root {
   /* Paleta principal Facholi */
   --facholi-verde-escuro:   #1a5f2a;

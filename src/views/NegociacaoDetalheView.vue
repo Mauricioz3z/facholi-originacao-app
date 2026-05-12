@@ -118,7 +118,7 @@ onMounted(carregar)
           </router-link>
           <div>
             <h4 class="fw-bold mb-0">Negociação {{ neg.numero }}</h4>
-            <span :class="neg.status === 'Fechado' ? 'badge bg-success' : 'badge bg-warning text-dark'">
+            <span :class="neg.status === 'Fechado' ? 'badge bg-success' : 'badge badge-andamento'">
               {{ neg.status === 'Fechado' ? 'Fechado' : 'Em Negociação' }}
             </span>
           </div>
