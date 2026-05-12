@@ -2,7 +2,16 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
+function getBuildId() {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`
+}
+
 export default defineConfig({
+  define: {
+    __BUILD_ID__: JSON.stringify(getBuildId())
+  },
   plugins: [
     vue(),
     VitePWA({
@@ -14,15 +23,13 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
+            // API sempre vai à rede — nunca serve dados em cache
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 10,
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 }
-            }
+            handler: 'NetworkOnly'
           },
           {
             urlPattern: ({ request }) => request.destination === 'image',

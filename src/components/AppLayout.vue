@@ -1,10 +1,12 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useAppVersion } from '../composables/useAppVersion'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const { versao, verificando, mensagem, verificarAtualizacao } = useAppVersion()
 
 function logout() {
   auth.logout()
@@ -126,6 +128,26 @@ function isActive(path) {
         <button class="nav-link w-100 text-start btn btn-link p-0" style="color:rgba(255,255,255,0.5);font-size:0.82rem" @click="logout">
           <i class="bi bi-box-arrow-left me-2"></i>Sair
         </button>
+
+        <div class="d-flex align-items-center justify-content-between mt-2 px-1" style="border-top:1px solid rgba(255,255,255,0.08);padding-top:0.5rem">
+          <span style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:ui-monospace,monospace">
+            v.{{ versao }}
+          </span>
+          <button
+            type="button"
+            class="btn btn-link p-0"
+            style="color:rgba(255,255,255,0.55);font-size:0.7rem;text-decoration:none"
+            :disabled="verificando"
+            @click="verificarAtualizacao"
+            title="Verificar atualização"
+          >
+            <i :class="verificando ? 'bi bi-arrow-clockwise spin' : 'bi bi-arrow-clockwise'"></i>
+            Atualizar
+          </button>
+        </div>
+        <div v-if="mensagem" style="font-size:0.68rem;color:rgba(255,255,255,0.65);margin-top:0.35rem;padding:0.3rem 0.5rem;background:rgba(255,255,255,0.06);border-radius:6px">
+          {{ mensagem }}
+        </div>
       </div>
     </nav>
 
