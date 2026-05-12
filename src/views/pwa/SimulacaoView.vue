@@ -1,6 +1,11 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { municipiosOrigemApi, municipiosDestinoApi, simulacaoApi } from '../../services/api'
+import PwaSelectBusca from '../../components/PwaSelectBusca.vue'
+
+function rotuloMunicipio(m) {
+  return `${m.nome}-${m.uf}${m.padrao ? ' ★' : ''}`
+}
 
 const origens = ref([])
 const destinos = ref([])
@@ -111,6 +116,11 @@ function fmtArroba(v) {
   return `@ R$ ${(Number(v) * 30).toFixed(2).replace('.', ',')}`
 }
 
+function fmtArrobaCurrency(v) {
+  if (v === null || v === undefined || v === '') return '—'
+  return `R$ ${(Number(v) * 30).toFixed(2).replace('.', ',')}`
+}
+
 function fmtFrete(v) {
   if (!v && v !== 0) return '—'
   return `R$ ${Number(v).toFixed(4).replace('.', ',')}/kg`
@@ -137,35 +147,26 @@ onMounted(carregar)
         <div class="pwa-card-body">
           <div style="margin-bottom:1rem">
             <label class="pwa-label">Destino</label>
-            <div class="pwa-select-wrap">
-              <select v-model="destinoId" class="pwa-select">
-                <option value="">Selecione o destino...</option>
-                <option v-for="d in destinos" :key="d.id" :value="d.id">
-                  {{ d.nome }}-{{ d.uf }}{{ d.padrao ? ' ★' : '' }}
-                </option>
-              </select>
-            </div>
+            <PwaSelectBusca
+              v-model="destinoId"
+              :opcoes="destinos"
+              :label-field="rotuloMunicipio"
+              group-field="uf"
+              placeholder="Selecione o destino..."
+              titulo="Selecionar destino"
+              :permitir-limpar="false"
+            />
           </div>
           <div>
             <label class="pwa-label">Origem</label>
-            <div class="pwa-select-wrap">
-              <select v-model="origemId" class="pwa-select">
-                <option value="">Selecione a origem...</option>
-                <optgroup
-                  v-for="uf in [...new Set(origens.map(o => o.uf))].sort()"
-                  :key="uf"
-                  :label="uf"
-                >
-                  <option
-                    v-for="o in origens.filter(x => x.uf === uf)"
-                    :key="o.id"
-                    :value="o.id"
-                  >
-                    {{ o.nome }}-{{ o.uf }}
-                  </option>
-                </optgroup>
-              </select>
-            </div>
+            <PwaSelectBusca
+              v-model="origemId"
+              :opcoes="origens"
+              :label-field="rotuloMunicipio"
+              group-field="uf"
+              placeholder="Selecione a origem..."
+              titulo="Selecionar origem"
+            />
           </div>
         </div>
       </div>
@@ -228,9 +229,9 @@ onMounted(carregar)
               </div>
             </div>
             <div class="pwa-sim-campo">
-              <div class="pwa-sim-campo-label">Frete/kg</div>
-              <div class="pwa-sim-campo-valor" style="color:var(--pwa-texto-suave);font-size:0.88rem">
-                {{ fmtFrete(item.freteKg) }}
+              <div class="pwa-sim-campo-label">R$/@ Colocado</div>
+              <div class="pwa-sim-campo-valor colocado">
+                {{ fmtArrobaCurrency(item.precoColocado) }}
               </div>
             </div>
           </div>

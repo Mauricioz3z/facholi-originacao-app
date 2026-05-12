@@ -63,33 +63,58 @@ onMounted(carregar)
 
 <template>
   <div>
-    <!-- Filtros de status -->
-    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;overflow-x:auto;padding-bottom:0.25rem;-webkit-overflow-scrolling:touch">
+    <!-- Filtros de status (3 colunas, sem scroll) -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
       <button
         class="pwa-btn pwa-btn-sm"
         :class="statusFiltro === 'Todos' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
-        style="white-space:nowrap;flex-shrink:0;width:auto;padding:0 1.1rem"
+        style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
         @click="filtrar('Todos')"
       >Todos</button>
       <button
         class="pwa-btn pwa-btn-sm"
         :class="statusFiltro === 'EmNegociacao' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
-        style="white-space:nowrap;flex-shrink:0;width:auto;padding:0 1.1rem"
+        style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
         @click="filtrar('EmNegociacao')"
       >Em Andamento</button>
       <button
         class="pwa-btn pwa-btn-sm"
         :class="statusFiltro === 'Fechado' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
-        style="white-space:nowrap;flex-shrink:0;width:auto;padding:0 1.1rem"
+        style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
         @click="filtrar('Fechado')"
       >Fechados</button>
-      <div style="width:1px;background:var(--pwa-borda);flex-shrink:0;margin:0 0.25rem"></div>
-      <button
-        class="pwa-btn pwa-btn-sm"
-        :class="apenasMinhas ? 'pwa-btn-primary' : 'pwa-btn-outline'"
-        style="white-space:nowrap;flex-shrink:0;width:auto;padding:0 1.1rem"
-        @click="apenasMinhas = !apenasMinhas"
-      ><i class="bi bi-person-check-fill me-1"></i>Minhas</button>
+    </div>
+
+    <!-- Checkbox "Apenas minhas" + contador -->
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:1rem">
+      <label
+        :style="{
+          display:'flex',
+          alignItems:'center',
+          gap:'10px',
+          cursor:'pointer',
+          padding:'8px 12px',
+          userSelect:'none',
+          border: '1.5px solid ' + (apenasMinhas ? 'var(--pwa-verde)' : 'var(--pwa-borda)'),
+          background: apenasMinhas ? 'rgba(46,160,67,0.06)' : 'white',
+          borderRadius: '10px',
+          transition: 'all 0.15s ease',
+          flex: '1',
+          minWidth: 0
+        }"
+      >
+        <input
+          type="checkbox"
+          v-model="apenasMinhas"
+          style="width:20px;height:20px;accent-color:var(--pwa-verde);cursor:pointer;flex-shrink:0;margin:0"
+        />
+        <span style="font-size:0.85rem;font-weight:600;color:var(--pwa-texto);line-height:1.2">
+          Mostrar apenas as minhas negociações
+        </span>
+      </label>
+      <span style="font-size:0.78rem;color:var(--pwa-texto-suave);font-weight:600;white-space:nowrap;flex-shrink:0">
+        {{ negociacoesFiltradas.length }} {{ negociacoesFiltradas.length === 1 ? 'item' : 'itens' }}
+      </span>
     </div>
 
     <div v-if="carregando" class="text-center py-5">

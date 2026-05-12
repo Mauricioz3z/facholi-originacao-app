@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { negociacaoApi, dashboardApi } from '../../services/api'
 import { useAuthStore } from '../../stores/auth'
@@ -7,25 +7,38 @@ import { useAuthStore } from '../../stores/auth'
 const router = useRouter()
 const auth = useAuthStore()
 const carregando = ref(true)
+const carregandoRecentes = ref(false)
 const cbAndamento = ref(0)
 const cbFechadas = ref(0)
 const porCategoria = ref([])
 const recentes = ref([])
+const apenasMinhas = ref(false)
+
+async function carregarRecentes() {
+  carregandoRecentes.value = true
+  try {
+    const params = { status: 'EmNegociacao', tamanhoPagina: 4 }
+    if (apenasMinhas.value) params.compradorId = auth.user?.id
+    const res = await negociacaoApi.listar(params)
+    recentes.value = res.data.items
+  } finally {
+    carregandoRecentes.value = false
+  }
+}
 
 async function carregar() {
   try {
-    const [resumo, abertas] = await Promise.all([
-      dashboardApi.resumoCabecas(),
-      negociacaoApi.listar({ status: 'EmNegociacao', tamanhoPagina: 4 })
-    ])
+    const resumo = await dashboardApi.resumoCabecas()
     cbAndamento.value = resumo.data.totalAndamento
     cbFechadas.value = resumo.data.totalFechadas
     porCategoria.value = resumo.data.porCategoria
-    recentes.value = abertas.data.items
+    await carregarRecentes()
   } finally {
     carregando.value = false
   }
 }
+
+watch(apenasMinhas, () => carregarRecentes())
 
 function ehMinha(neg) {
   return neg.compradorId === auth.user?.id
@@ -142,14 +155,46 @@ onMounted(carregar)
       <!-- Negociações recentes em andamento -->
       <div class="pwa-section-title">Negociações em Andamento</div>
 
-      <div v-if="recentes.length === 0"
-           style="text-align:center;color:var(--pwa-texto-suave);padding:2rem 0;font-size:0.95rem">
-        <i class="bi bi-clipboard" style="font-size:2.5rem;color:var(--pwa-borda);display:block;margin-bottom:0.75rem"></i>
-        Nenhuma negociação em andamento.
+      <!-- Filtro apenas minhas -->
+      <label
+        :style="{
+          display:'flex',
+          alignItems:'center',
+          gap:'10px',
+          cursor:'pointer',
+          padding:'8px 12px',
+          marginBottom:'0.75rem',
+          userSelect:'none',
+          border: '1.5px solid ' + (apenasMinhas ? 'var(--pwa-verde)' : 'var(--pwa-borda)'),
+          background: apenasMinhas ? 'rgba(46,160,67,0.06)' : 'white',
+          borderRadius: '10px',
+          transition: 'all 0.15s ease'
+        }"
+      >
+        <input
+          type="checkbox"
+          v-model="apenasMinhas"
+          style="width:20px;height:20px;accent-color:var(--pwa-verde);cursor:pointer;flex-shrink:0;margin:0"
+        />
+        <span style="font-size:0.85rem;font-weight:600;color:var(--pwa-texto);line-height:1.2">
+          Mostrar apenas as minhas negociações
+        </span>
+      </label>
+
+      <div v-if="carregandoRecentes" class="text-center py-3">
+        <div class="spinner-border spinner-border-sm" style="color:var(--pwa-verde)"></div>
       </div>
 
+      <template v-else>
+        <div v-if="recentes.length === 0"
+             style="text-align:center;color:var(--pwa-texto-suave);padding:2rem 0;font-size:0.95rem">
+          <i class="bi bi-clipboard" style="font-size:2.5rem;color:var(--pwa-borda);display:block;margin-bottom:0.75rem"></i>
+          {{ apenasMinhas ? 'Você não tem negociações em andamento.' : 'Nenhuma negociação em andamento.' }}
+        </div>
+      </template>
+
       <div
-        v-for="neg in recentes"
+        v-for="neg in (carregandoRecentes ? [] : recentes)"
         :key="neg.id"
         class="pwa-neg-card"
         @click="router.push('/app/negociacoes/' + neg.id)"
