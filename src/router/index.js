@@ -30,6 +30,7 @@ const routes = [
   { path: '/admin/cotacoes', name: 'Cotacoes', component: () => import('../views/admin/CotacoesView.vue'), meta: { adminOnly: true, title: 'Cotação Regional' } },
   { path: '/admin/config-comissao', name: 'ConfigComissao', component: () => import('../views/admin/ConfigComissaoView.vue'), meta: { adminOnly: true, title: 'Comissão / Config.' } },
   { path: '/admin/auditoria', name: 'Auditoria', component: () => import('../views/admin/AuditoriaView.vue'), meta: { adminOnly: true, title: 'Histórico' } },
+  { path: '/oportunidades', name: 'Oportunidades', component: () => import('../views/OportunidadesView.vue'), meta: { title: 'Mapa de Oportunidades' } },
 
   // PWA routes (mobile, compradores)
   {
