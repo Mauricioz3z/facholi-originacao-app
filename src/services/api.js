@@ -93,7 +93,9 @@ export const municipiosDestinoApi = {
 
 export const categoriasApi = {
   listar: () => api.get('/categorias'),
+  criar: (data) => api.post('/categorias', data),
   atualizar: (id, data) => api.put(`/categorias/${id}`, data),
+  excluir: (id) => api.delete(`/categorias/${id}`),
 }
 
 export const icmsApi = {
