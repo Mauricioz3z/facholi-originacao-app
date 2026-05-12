@@ -21,6 +21,7 @@
   --pwa-radius:       14px;
   --pwa-sombra:       0 2px 10px rgba(0,0,0,0.10);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top:    env(safe-area-inset-top, 0px);
 }
 
 /* ---------- base ---------- */
@@ -42,9 +43,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
-  height: 58px;
+  padding: var(--safe-top) 0.5rem 0;
+  height: calc(58px + var(--safe-top));
+  box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  gap: 4px;
 }
 
 .pwa-topbar img {
