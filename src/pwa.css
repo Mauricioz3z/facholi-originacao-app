@@ -316,7 +316,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 .pwa-neg-card:active { transform: scale(0.985); }
-.pwa-neg-card.fechado { border-left-color: var(--pwa-laranja); }
+.pwa-neg-card.fechado   { border-left-color: var(--pwa-laranja); }
+.pwa-neg-card.concluido {
+  border-left-color: #bdbdbd;
+  background: #f7f7f7;
+  opacity: 0.72;
+}
+.pwa-neg-card.concluido .pwa-neg-titulo,
+.pwa-neg-card.concluido .pwa-neg-numero { color: #888; }
 
 .pwa-neg-numero {
   font-size: 0.8rem;

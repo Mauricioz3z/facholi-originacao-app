@@ -36,6 +36,7 @@ function inicializarItens() {
     ativo: false,
     qtdNegociada: null,
     precoNegociado: '',
+    precoNegociadoMask: '',
     pesoMedio: cat.pesoMedio,
     precoColocado: null
   }))
@@ -95,6 +96,7 @@ async function carregar() {
           item.ativo = true
           item.qtdNegociada = itemExistente.qtdNegociada
           item.precoNegociado = itemExistente.precoNegociado
+          item.precoNegociadoMask = inicializarMascara(itemExistente.precoNegociado)
           item.pesoMedio = itemExistente.pesoMedio
           item.precoColocado = itemExistente.precoColocado
         }
@@ -150,6 +152,27 @@ async function salvar() {
 function fmtKg(v) {
   if (!v && v !== 0) return '—'
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}/kg`
+}
+
+function aplicarMascara3(valor) {
+  const digits = String(valor ?? '').replace(/\D/g, '')
+  if (!digits) return ''
+  return (parseInt(digits, 10) / 1000).toLocaleString('pt-BR', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3
+  })
+}
+
+function inicializarMascara(valor) {
+  if (!valor && valor !== 0) return ''
+  return aplicarMascara3(String(Math.round(Number(valor) * 1000)))
+}
+
+function aoDigitarPraca(item, evento) {
+  const mascarado = aplicarMascara3(evento.target.value)
+  item.precoNegociadoMask = mascarado
+  const digits = mascarado.replace(/\D/g, '')
+  item.precoNegociado = digits ? parseInt(digits, 10) / 1000 : ''
 }
 
 onMounted(carregar)
@@ -244,9 +267,16 @@ onMounted(carregar)
                 <td>
                   <div v-if="item.ativo" class="d-flex align-items-center gap-1">
                     <span class="text-muted small">R$</span>
-                    <input v-model="item.precoNegociado" type="number" step="0.0001" min="0"
-                           class="form-control form-control-sm" style="width:110px"
-                           placeholder="0,0000" required />
+                    <input
+                      :value="item.precoNegociadoMask"
+                      type="text"
+                      inputmode="decimal"
+                      class="form-control form-control-sm"
+                      style="width:110px"
+                      placeholder="0,000"
+                      required
+                      @input="aoDigitarPraca(item, $event)"
+                    />
                   </div>
                   <span v-else class="text-muted">—</span>
                 </td>

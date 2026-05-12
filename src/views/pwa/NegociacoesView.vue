@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { negociacaoApi } from '../../services/api'
 import { useAuthStore } from '../../stores/auth'
@@ -10,6 +10,12 @@ const negociacoes = ref([])
 const total = ref(0)
 const carregando = ref(false)
 const statusFiltro = ref('Todos')
+const apenasMinhas = ref(false)
+
+const negociacoesFiltradas = computed(() => {
+  if (!apenasMinhas.value) return negociacoes.value
+  return negociacoes.value.filter(n => n.compradorId === auth.user?.id)
+})
 
 async function carregar() {
   carregando.value = true
@@ -77,6 +83,13 @@ onMounted(carregar)
         style="white-space:nowrap;flex-shrink:0;width:auto;padding:0 1.1rem"
         @click="filtrar('Fechado')"
       >Fechados</button>
+      <div style="width:1px;background:var(--pwa-borda);flex-shrink:0;margin:0 0.25rem"></div>
+      <button
+        class="pwa-btn pwa-btn-sm"
+        :class="apenasMinhas ? 'pwa-btn-primary' : 'pwa-btn-outline'"
+        style="white-space:nowrap;flex-shrink:0;width:auto;padding:0 1.1rem"
+        @click="apenasMinhas = !apenasMinhas"
+      ><i class="bi bi-person-check-fill me-1"></i>Minhas</button>
     </div>
 
     <div v-if="carregando" class="text-center py-5">
@@ -84,7 +97,7 @@ onMounted(carregar)
     </div>
 
     <div
-      v-else-if="negociacoes.length === 0"
+      v-else-if="negociacoesFiltradas.length === 0"
       style="text-align:center;padding:3rem 1rem;color:var(--pwa-texto-suave)"
     >
       <i class="bi bi-clipboard-x" style="font-size:3rem;color:var(--pwa-borda);display:block;margin-bottom:0.75rem"></i>
@@ -92,10 +105,13 @@ onMounted(carregar)
     </div>
 
     <div
-      v-for="neg in negociacoes"
+      v-for="neg in negociacoesFiltradas"
       :key="neg.id"
       class="pwa-neg-card"
-      :class="{ fechado: neg.status === 'Fechado' }"
+      :class="{
+        fechado:   neg.status === 'Fechado' && percentualEntrega(neg) < 100,
+        concluido: neg.status === 'Fechado' && percentualEntrega(neg) >= 100
+      }"
       @click="router.push('/app/negociacoes/' + neg.id)"
     >
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
@@ -105,9 +121,13 @@ onMounted(carregar)
         </div>
         <span
           class="pwa-badge"
-          :class="neg.status === 'Fechado' ? 'pwa-badge-laranja' : 'pwa-badge-verde'"
+          :class="neg.status !== 'Fechado' ? 'pwa-badge-verde'
+                : percentualEntrega(neg) >= 100 ? 'pwa-badge-cinza'
+                : 'pwa-badge-laranja'"
         >
-          {{ neg.status === 'Fechado' ? 'Fechado' : 'Em Andamento' }}
+          {{ neg.status !== 'Fechado' ? 'Em Andamento'
+           : percentualEntrega(neg) >= 100 ? 'Concluído'
+           : 'Fechado' }}
         </span>
       </div>
       <div class="pwa-neg-titulo">{{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}</div>

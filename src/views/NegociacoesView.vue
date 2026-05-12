@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { negociacaoApi, usuariosApi, corretoresApi } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const negociacoes = ref([])
 const total = ref(0)
 const carregando = ref(false)
@@ -15,6 +17,7 @@ const filtros = ref({
   compradorId: '',
   corretorId: '',
   uf: '',
+  apenasMinhas: false,
   pagina: 1,
   tamanhoPagina: 20
 })
@@ -24,7 +27,7 @@ async function carregar() {
   try {
     const params = {
       status: filtros.value.status !== 'Todos' ? filtros.value.status : undefined,
-      compradorId: filtros.value.compradorId || undefined,
+      compradorId: filtros.value.apenasMinhas ? auth.user?.id : (filtros.value.compradorId || undefined),
       corretorId: filtros.value.corretorId || undefined,
       uf: filtros.value.uf || undefined,
       pagina: filtros.value.pagina,
@@ -36,6 +39,12 @@ async function carregar() {
   } finally {
     carregando.value = false
   }
+}
+
+function aoMarcarMinhas() {
+  if (filtros.value.apenasMinhas) filtros.value.compradorId = ''
+  filtros.value.pagina = 1
+  carregar()
 }
 
 async function carregarFiltros() {
@@ -128,8 +137,22 @@ onMounted(() => {
               <option value="Fechado">Fechado</option>
             </select>
           </div>
-          <div class="col-md-2">
-            <button class="btn btn-primary btn-sm w-100" @click="filtros.pagina = 1; carregar()">Filtrar</button>
+          <div class="col-md-2 d-flex gap-2 align-items-center">
+            <button class="btn btn-primary btn-sm flex-grow-1" @click="filtros.pagina = 1; carregar()">Filtrar</button>
+          </div>
+          <div class="col-12 d-flex align-items-center">
+            <div class="form-check mb-0">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="apenasMinhas"
+                v-model="filtros.apenasMinhas"
+                @change="aoMarcarMinhas"
+              />
+              <label class="form-check-label fw-semibold" for="apenasMinhas">
+                Apenas minhas negociações
+              </label>
+            </div>
           </div>
         </div>
       </div>

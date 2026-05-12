@@ -1,25 +1,27 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { negociacaoApi } from '../../services/api'
+import { negociacaoApi, dashboardApi } from '../../services/api'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
 const carregando = ref(true)
-const emAndamento = ref(0)
-const fechadas = ref(0)
+const cbAndamento = ref(0)
+const cbFechadas = ref(0)
+const porCategoria = ref([])
 const recentes = ref([])
 
 async function carregar() {
   try {
-    const [abertas, encerradas] = await Promise.all([
-      negociacaoApi.listar({ status: 'EmNegociacao', tamanhoPagina: 5 }),
-      negociacaoApi.listar({ status: 'Fechado', tamanhoPagina: 1 })
+    const [resumo, abertas] = await Promise.all([
+      dashboardApi.resumoCabecas(),
+      negociacaoApi.listar({ status: 'EmNegociacao', tamanhoPagina: 4 })
     ])
-    emAndamento.value = abertas.data.total
-    fechadas.value = encerradas.data.total
-    recentes.value = abertas.data.items.slice(0, 4)
+    cbAndamento.value = resumo.data.totalAndamento
+    cbFechadas.value = resumo.data.totalFechadas
+    porCategoria.value = resumo.data.porCategoria
+    recentes.value = abertas.data.items
   } finally {
     carregando.value = false
   }
@@ -32,6 +34,17 @@ function ehMinha(neg) {
 function fmtData(d) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('pt-BR')
+}
+
+function fmtCb(v) {
+  if (!v && v !== 0) return '—'
+  return Number(v).toLocaleString('pt-BR')
+}
+
+function fmtCategoria(cat) {
+  const min = Math.round(Number(cat.peso_min))
+  const max = Math.round(Number(cat.peso_max))
+  return `${cat.categoria} ${min}–${max} kg`
 }
 
 onMounted(carregar)
@@ -51,25 +64,82 @@ onMounted(carregar)
         <div style="font-size:0.9rem;color:var(--pwa-texto-suave)">Resumo das negociações da equipe</div>
       </div>
 
+      <!-- Totais de cabeças -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem">
         <div class="pwa-card" style="margin-bottom:0">
           <div class="pwa-card-body" style="text-align:center;padding:1.25rem 1rem">
-            <div style="font-size:2.4rem;font-weight:800;color:var(--pwa-laranja)">{{ emAndamento }}</div>
-            <div style="font-size:0.75rem;font-weight:700;color:var(--pwa-texto-suave);text-transform:uppercase;letter-spacing:0.04em;margin-top:4px">
-              Em Andamento
+            <div style="font-size:2.2rem;font-weight:800;color:var(--pwa-laranja)">{{ fmtCb(cbAndamento) }}</div>
+            <div style="font-size:0.7rem;font-weight:700;color:var(--pwa-texto-suave);text-transform:uppercase;letter-spacing:0.04em;margin-top:4px">
+              CB em andamento
             </div>
           </div>
         </div>
         <div class="pwa-card" style="margin-bottom:0">
           <div class="pwa-card-body" style="text-align:center;padding:1.25rem 1rem">
-            <div style="font-size:2.4rem;font-weight:800;color:var(--pwa-verde)">{{ fechadas }}</div>
-            <div style="font-size:0.75rem;font-weight:700;color:var(--pwa-texto-suave);text-transform:uppercase;letter-spacing:0.04em;margin-top:4px">
-              Fechadas
+            <div style="font-size:2.2rem;font-weight:800;color:var(--pwa-verde)">{{ fmtCb(cbFechadas) }}</div>
+            <div style="font-size:0.7rem;font-weight:700;color:var(--pwa-texto-suave);text-transform:uppercase;letter-spacing:0.04em;margin-top:4px">
+              CB fechadas
             </div>
           </div>
         </div>
       </div>
 
+      <!-- CB por categoria -->
+      <div class="pwa-section-title">Cabeças por Categoria</div>
+
+      <div class="pwa-card" style="margin-bottom:1.25rem">
+        <div class="pwa-card-body" style="padding:0">
+          <div v-if="porCategoria.length === 0"
+               style="text-align:center;color:var(--pwa-texto-suave);padding:1.5rem;font-size:0.9rem">
+            Nenhum dado de categoria disponível.
+          </div>
+          <table v-else style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:var(--pwa-fundo)">
+                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.72rem;font-weight:700;color:var(--pwa-texto-suave);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--pwa-borda)">
+                  Categoria
+                </th>
+                <th style="padding:0.6rem 0.75rem;text-align:right;font-size:0.72rem;font-weight:700;color:var(--pwa-laranja);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--pwa-borda)">
+                  Em Andamento
+                </th>
+                <th style="padding:0.6rem 1rem;text-align:right;font-size:0.72rem;font-weight:700;color:var(--pwa-verde);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--pwa-borda)">
+                  Fechadas
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(cat, idx) in porCategoria"
+                :key="cat.categoria"
+                :style="idx < porCategoria.length - 1 ? 'border-bottom:1px solid var(--pwa-borda)' : ''"
+              >
+                <td style="padding:0.65rem 1rem;font-size:0.9rem;font-weight:600;color:var(--pwa-texto)">
+                  {{ fmtCategoria(cat) }}
+                </td>
+                <td style="padding:0.65rem 0.75rem;text-align:right;font-size:0.9rem;font-weight:700;color:var(--pwa-laranja)">
+                  {{ fmtCb(cat.cb_andamento) }}
+                </td>
+                <td style="padding:0.65rem 1rem;text-align:right;font-size:0.9rem;font-weight:700;color:var(--pwa-verde)">
+                  {{ fmtCb(cat.cb_fechadas) }}
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--pwa-fundo);border-top:2px solid var(--pwa-borda)">
+                <td style="padding:0.6rem 1rem;font-size:0.82rem;font-weight:700;color:var(--pwa-texto-suave)">Total</td>
+                <td style="padding:0.6rem 0.75rem;text-align:right;font-size:0.88rem;font-weight:800;color:var(--pwa-laranja)">
+                  {{ fmtCb(cbAndamento) }}
+                </td>
+                <td style="padding:0.6rem 1rem;text-align:right;font-size:0.88rem;font-weight:800;color:var(--pwa-verde)">
+                  {{ fmtCb(cbFechadas) }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Negociações recentes em andamento -->
       <div class="pwa-section-title">Negociações em Andamento</div>
 
       <div v-if="recentes.length === 0"

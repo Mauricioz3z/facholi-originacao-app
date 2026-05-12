@@ -52,7 +52,8 @@ async function carregar() {
       pesoMedio: c.pesoMedio,
       ativo: false,
       qtdNegociada: '',
-      precoNegociado: ''
+      precoNegociado: '',
+      precoNegociadoMask: ''
     }))
 
     if (modoEdicao.value) {
@@ -78,6 +79,7 @@ async function carregar() {
           itemForm.ativo = true
           itemForm.qtdNegociada = itemNeg.qtdNegociada ?? ''
           itemForm.precoNegociado = itemNeg.precoNegociado ?? ''
+          itemForm.precoNegociadoMask = inicializarMascara(itemNeg.precoNegociado)
           itemForm.pesoMedio = itemNeg.pesoMedio ?? itemForm.pesoMedio
         }
       }
@@ -142,6 +144,27 @@ async function salvar() {
 function voltar() {
   if (modoEdicao.value) router.push('/app/negociacoes/' + editandoId.value)
   else router.push('/app/negociacoes')
+}
+
+function aplicarMascara3(valor) {
+  const digits = String(valor ?? '').replace(/\D/g, '')
+  if (!digits) return ''
+  return (parseInt(digits, 10) / 1000).toLocaleString('pt-BR', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3
+  })
+}
+
+function inicializarMascara(valor) {
+  if (!valor && valor !== 0) return ''
+  return aplicarMascara3(String(Math.round(Number(valor) * 1000)))
+}
+
+function aoDigitarPraca(item, evento) {
+  const mascarado = aplicarMascara3(evento.target.value)
+  item.precoNegociadoMask = mascarado
+  const digits = mascarado.replace(/\D/g, '')
+  item.precoNegociado = digits ? parseInt(digits, 10) / 1000 : ''
 }
 
 onMounted(carregar)
@@ -239,14 +262,13 @@ onMounted(carregar)
             <div>
               <label class="pwa-label">R$/kg Praça <span style="color:#c0392b">*</span></label>
               <input
-                v-model="item.precoNegociado"
-                type="number"
-                step="0.0001"
-                min="0"
+                :value="item.precoNegociadoMask"
+                type="text"
                 inputmode="decimal"
                 class="pwa-num-input"
-                placeholder="0,0000"
+                placeholder="0,000"
                 required
+                @input="aoDigitarPraca(item, $event)"
               />
             </div>
             <div>

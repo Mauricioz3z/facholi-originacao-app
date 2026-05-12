@@ -52,7 +52,12 @@ export const negociacaoApi = {
 export const dashboardApi = {
   porComprador: (params) => api.get('/dashboard/compradores', { params }),
   negociacoesPorComprador: (compradorId, params) => api.get(`/dashboard/compradores/${compradorId}/negociacoes`, { params }),
+  categoriasPorComprador: (compradorId, params) => api.get(`/dashboard/compradores/${compradorId}/categorias-corretor`, { params }),
   porCorretor: (params) => api.get('/dashboard/corretores', { params }),
+  porCategoria: (params) => api.get('/dashboard/por-categoria', { params }),
+  detalhePorCategoria: (categoriaId, params) => api.get(`/dashboard/por-categoria/${categoriaId}/detalhe`, { params }),
+  totais: (params) => api.get('/dashboard/totais', { params }),
+  resumoCabecas: () => api.get('/dashboard/resumo-cabecas'),
 }
 
 // Cadastros
