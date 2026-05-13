@@ -10,6 +10,8 @@ const carregando = ref(true)
 const carregandoRecentes = ref(false)
 const cbAndamento = ref(0)
 const cbFechadas = ref(0)
+const negAndamento = ref(0)
+const negFechadas = ref(0)
 const porCategoria = ref([])
 const recentes = ref([])
 const apenasMinhas = ref(false)
@@ -31,6 +33,8 @@ async function carregar() {
     const resumo = await dashboardApi.resumoCabecas()
     cbAndamento.value = resumo.data.totalAndamento
     cbFechadas.value = resumo.data.totalFechadas
+    negAndamento.value = resumo.data.negociacoesAndamento ?? 0
+    negFechadas.value = resumo.data.negociacoesFechadas ?? 0
     porCategoria.value = resumo.data.porCategoria
     await carregarRecentes()
   } finally {
@@ -51,6 +55,20 @@ function fmtData(d) {
 
 function fmtCb(v) {
   if (!v && v !== 0) return '—'
+  return Number(v).toLocaleString('pt-BR')
+}
+
+// Formato compacto pra evitar overflow: 1.500 → "1,5 mil", 10.000 → "10 mil", 1.000.000 → "1 mi"
+const compactFmt = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
+function fmtCompact(v) {
+  if (!v && v !== 0) return '—'
+  const n = Number(v)
+  if (n < 10000) return n.toLocaleString('pt-BR')
+  return compactFmt.format(n)
+}
+
+function fmtExato(v) {
+  if (!v && v !== 0) return ''
   return Number(v).toLocaleString('pt-BR')
 }
 
@@ -77,21 +95,41 @@ onMounted(carregar)
         <div style="font-size:0.9rem;color:var(--pwa-texto-suave)">Resumo das negociações da equipe</div>
       </div>
 
-      <!-- Totais de cabeças -->
+      <!-- Totais: negociações + cabeças -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem">
-        <div class="pwa-card" style="margin-bottom:0">
-          <div class="pwa-card-body" style="text-align:center;padding:1.25rem 1rem">
-            <div style="font-size:2.2rem;font-weight:800;color:var(--pwa-laranja)">{{ fmtCb(cbAndamento) }}</div>
-            <div style="font-size:0.7rem;font-weight:700;color:var(--pwa-texto-suave);text-transform:uppercase;letter-spacing:0.04em;margin-top:4px">
-              CB em andamento
+        <div class="pwa-card" style="margin-bottom:0;background:#fff4e6;border:1px solid #fddcb5;min-width:0">
+          <div class="pwa-card-body" style="text-align:center;padding:1.1rem 0.4rem;min-width:0">
+            <div
+              style="display:flex;align-items:baseline;justify-content:center;gap:6px;color:var(--pwa-laranja);min-width:0"
+              :title="`${fmtExato(negAndamento)} negociações · ${fmtExato(cbAndamento)} cabeças`"
+            >
+              <span style="font-size:clamp(1.55rem, 7.5vw, 2.1rem);font-weight:800;line-height:1">{{ fmtCompact(negAndamento) }}</span>
+              <span style="font-size:1.2rem;font-weight:300;opacity:0.55;line-height:1">|</span>
+              <span style="font-size:clamp(0.95rem, 4vw, 1.1rem);font-weight:700;line-height:1;white-space:nowrap">
+                {{ fmtCompact(cbAndamento) }}
+                <span style="font-size:0.7rem;font-weight:600;opacity:0.85">cb</span>
+              </span>
+            </div>
+            <div style="font-size:0.72rem;font-weight:700;color:var(--pwa-laranja);text-transform:uppercase;letter-spacing:0.04em;margin-top:8px;opacity:0.85">
+              Em Andamento
             </div>
           </div>
         </div>
-        <div class="pwa-card" style="margin-bottom:0">
-          <div class="pwa-card-body" style="text-align:center;padding:1.25rem 1rem">
-            <div style="font-size:2.2rem;font-weight:800;color:var(--pwa-verde)">{{ fmtCb(cbFechadas) }}</div>
-            <div style="font-size:0.7rem;font-weight:700;color:var(--pwa-texto-suave);text-transform:uppercase;letter-spacing:0.04em;margin-top:4px">
-              CB fechadas
+        <div class="pwa-card" style="margin-bottom:0;background:#eaf7ee;border:1px solid #b2dfca;min-width:0">
+          <div class="pwa-card-body" style="text-align:center;padding:1.1rem 0.4rem;min-width:0">
+            <div
+              style="display:flex;align-items:baseline;justify-content:center;gap:6px;color:var(--pwa-verde);min-width:0"
+              :title="`${fmtExato(negFechadas)} negociações · ${fmtExato(cbFechadas)} cabeças`"
+            >
+              <span style="font-size:clamp(1.55rem, 7.5vw, 2.1rem);font-weight:800;line-height:1">{{ fmtCompact(negFechadas) }}</span>
+              <span style="font-size:1.2rem;font-weight:300;opacity:0.55;line-height:1">|</span>
+              <span style="font-size:clamp(0.95rem, 4vw, 1.1rem);font-weight:700;line-height:1;white-space:nowrap">
+                {{ fmtCompact(cbFechadas) }}
+                <span style="font-size:0.7rem;font-weight:600;opacity:0.85">cb</span>
+              </span>
+            </div>
+            <div style="font-size:0.72rem;font-weight:700;color:var(--pwa-verde);text-transform:uppercase;letter-spacing:0.04em;margin-top:8px;opacity:0.85">
+              Fechados
             </div>
           </div>
         </div>

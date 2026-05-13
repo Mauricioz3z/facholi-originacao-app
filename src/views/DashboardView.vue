@@ -10,7 +10,14 @@ const listaCorretores = ref([])
 const carregando = ref(false)
 const cbAndamento = ref(0)
 const cbFechadas = ref(0)
+const negAndamento = ref(0)
+const negFechadas = ref(0)
 const porCategoriaCb = ref([])
+
+function fmtNumero(v) {
+  if (!v && v !== 0) return '—'
+  return Number(v).toLocaleString('pt-BR')
+}
 
 const filtros = ref({
   compradorId: '',
@@ -211,6 +218,8 @@ async function carregarResumoCabecas() {
   const res = await dashboardApi.resumoCabecas()
   cbAndamento.value = res.data.totalAndamento
   cbFechadas.value = res.data.totalFechadas
+  negAndamento.value = res.data.negociacoesAndamento ?? 0
+  negFechadas.value = res.data.negociacoesFechadas ?? 0
   porCategoriaCb.value = res.data.porCategoria
 }
 
@@ -233,16 +242,36 @@ onMounted(() => {
       <div class="card-header bg-white fw-semibold">Cabeças por Categoria</div>
       <div class="card-body">
         <div class="row g-3 mb-3">
-          <div class="col-6 col-md-3">
-            <div class="rounded-3 text-center py-3 px-2" style="background:#fff8f0;border:1px solid #fddcb5">
-              <div style="font-size:1.9rem;font-weight:800;color:#e67e22;line-height:1">{{ cbAndamento.toLocaleString('pt-BR') }}</div>
-              <div class="small fw-semibold text-uppercase mt-1" style="color:#b3621a;letter-spacing:.04em">Em Andamento</div>
+          <div class="col-12 col-md-6">
+            <div
+              class="rounded-3 text-center py-3 px-3"
+              style="background:#fff8f0;border:1px solid #fddcb5"
+            >
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:10px;color:#e67e22;line-height:1;flex-wrap:wrap">
+                <span style="font-size:2rem;font-weight:800;white-space:nowrap">{{ fmtNumero(negAndamento) }}</span>
+                <span style="font-size:1.5rem;font-weight:300;opacity:0.5">|</span>
+                <span style="font-size:1.2rem;font-weight:700;white-space:nowrap">
+                  {{ fmtNumero(cbAndamento) }}
+                  <span style="font-size:0.8rem;font-weight:600;opacity:0.85">cb</span>
+                </span>
+              </div>
+              <div class="small fw-semibold text-uppercase mt-2" style="color:#b3621a;letter-spacing:.04em">Em Andamento</div>
             </div>
           </div>
-          <div class="col-6 col-md-3">
-            <div class="rounded-3 text-center py-3 px-2" style="background:#f0fff5;border:1px solid #b2dfca">
-              <div style="font-size:1.9rem;font-weight:800;color:#27ae60;line-height:1">{{ cbFechadas.toLocaleString('pt-BR') }}</div>
-              <div class="small fw-semibold text-uppercase mt-1" style="color:#1a7a43;letter-spacing:.04em">Fechadas</div>
+          <div class="col-12 col-md-6">
+            <div
+              class="rounded-3 text-center py-3 px-3"
+              style="background:#f0fff5;border:1px solid #b2dfca"
+            >
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:10px;color:#27ae60;line-height:1;flex-wrap:wrap">
+                <span style="font-size:2rem;font-weight:800;white-space:nowrap">{{ fmtNumero(negFechadas) }}</span>
+                <span style="font-size:1.5rem;font-weight:300;opacity:0.5">|</span>
+                <span style="font-size:1.2rem;font-weight:700;white-space:nowrap">
+                  {{ fmtNumero(cbFechadas) }}
+                  <span style="font-size:0.8rem;font-weight:600;opacity:0.85">cb</span>
+                </span>
+              </div>
+              <div class="small fw-semibold text-uppercase mt-2" style="color:#1a7a43;letter-spacing:.04em">Fechadas</div>
             </div>
           </div>
         </div>

@@ -58,7 +58,7 @@ export const dashboardApi = {
   porCategoria: (params) => api.get('/dashboard/por-categoria', { params }),
   detalhePorCategoria: (categoriaId, params) => api.get(`/dashboard/por-categoria/${categoriaId}/detalhe`, { params }),
   totais: (params) => api.get('/dashboard/totais', { params }),
-  resumoCabecas: () => api.get('/dashboard/resumo-cabecas'),
+  resumoCabecas: () => api.get('/dashboard/resumo-cabecas?mock=2'),
 }
 
 // Cadastros
