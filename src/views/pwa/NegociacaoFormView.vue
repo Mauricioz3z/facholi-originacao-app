@@ -6,6 +6,11 @@ import {
   municipiosDestinoApi, categoriasApi
 } from '../../services/api'
 import { useAuthStore } from '../../stores/auth'
+import PwaSelectBusca from '../../components/PwaSelectBusca.vue'
+
+function rotuloMunicipio(m) {
+  return `${m.nome}-${m.uf}${m.padrao ? ' ★' : ''}`
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -205,33 +210,27 @@ onMounted(carregar)
 
           <div style="margin-bottom:1rem">
             <label class="pwa-label">Origem <span style="color:#c0392b">*</span></label>
-            <div class="pwa-select-wrap">
-              <select v-model="form.municipioOrigemId" class="pwa-select" required>
-                <option value="">Selecione a origem...</option>
-                <optgroup
-                  v-for="uf in [...new Set(origens.map(o => o.uf))].sort()"
-                  :key="uf"
-                  :label="uf"
-                >
-                  <option
-                    v-for="o in origens.filter(x => x.uf === uf)"
-                    :key="o.id"
-                    :value="o.id"
-                  >{{ o.nome }}-{{ o.uf }}</option>
-                </optgroup>
-              </select>
-            </div>
+            <PwaSelectBusca
+              v-model="form.municipioOrigemId"
+              :opcoes="origens"
+              :label-field="rotuloMunicipio"
+              group-field="uf"
+              placeholder="Selecione a origem..."
+              titulo="Selecionar origem"
+            />
           </div>
 
           <div style="margin-bottom:1rem">
             <label class="pwa-label">Destino</label>
-            <div class="pwa-select-wrap">
-              <select v-model="form.municipioDestinoId" class="pwa-select">
-                <option v-for="d in destinos" :key="d.id" :value="d.id">
-                  {{ d.nome }}-{{ d.uf }}
-                </option>
-              </select>
-            </div>
+            <PwaSelectBusca
+              v-model="form.municipioDestinoId"
+              :opcoes="destinos"
+              :label-field="rotuloMunicipio"
+              group-field="uf"
+              placeholder="Selecione o destino..."
+              titulo="Selecionar destino"
+              :permitir-limpar="false"
+            />
           </div>
 
           <div>
