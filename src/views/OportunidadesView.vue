@@ -54,11 +54,18 @@ async function buscar() {
   }
 }
 
-watch([categoriaId, precoNumerico, modoCalculo], () => {
+// IMPORTANTE: precoNumerico fica fora do watch — não disparar buscar() a cada tecla digitada.
+// A busca por preço acontece no blur/Enter do campo (ver dispararBuscaPorPreco).
+watch([categoriaId, modoCalculo], () => {
   if (!categoriaId.value) { resultados.value = []; return }
   if (ehComIcms.value && !precoNumerico.value) { resultados.value = []; return }
   buscar()
 })
+
+function dispararBuscaPorPreco() {
+  if (!categoriaId.value || !precoNumerico.value) return
+  buscar()
+}
 
 const resultadosFiltrados = computed(() => {
   if (!filtroUf.value) return resultados.value
@@ -70,7 +77,7 @@ const ufsDisponiveis = computed(() => {
 })
 
 // Valor exibido como "destaque" da linha — muda conforme o modo:
-//  - Com ICMS: precoPraca (maior = melhor)
+//  - Com ICMS: precoPraca (preço objetivo em R$/kg)
 //  - Sem ICMS: custoColocadoKg (menor = melhor)
 function valorOrdenacao(row) {
   return ehComIcms.value ? row.precoPraca : row.custoColocadoKg
@@ -79,7 +86,6 @@ function valorOrdenacao(row) {
 const melhorValor = computed(() => {
   const lista = resultadosFiltrados.value
   if (!lista.length) return null
-  // Primeiro item já vem ordenado do backend (ranking[0] = melhor em ambos os modos)
   return valorOrdenacao(lista[0])
 })
 
@@ -88,6 +94,35 @@ const piorValor = computed(() => {
   if (!lista.length) return null
   return valorOrdenacao(lista[lista.length - 1])
 })
+
+// Modo A: melhor/pior deságio (já vem ordenado do backend).
+// Ignora origens sem cotação (desagioPercentual == null) para os cards.
+const melhorDesagio = computed(() => {
+  if (!ehComIcms.value) return null
+  const comValor = resultadosFiltrados.value.filter(r => r.desagioPercentual !== null && r.desagioPercentual !== undefined)
+  return comValor.length ? comValor[0].desagioPercentual : null
+})
+
+const piorDesagio = computed(() => {
+  if (!ehComIcms.value) return null
+  const comValor = resultadosFiltrados.value.filter(r => r.desagioPercentual !== null && r.desagioPercentual !== undefined)
+  return comValor.length ? comValor[comValor.length - 1].desagioPercentual : null
+})
+
+function fmtPct(v) {
+  if (v === null || v === undefined) return '—'
+  const n = Number(v)
+  const sinal = n > 0 ? '+' : ''
+  return `${sinal}${n.toFixed(2).replace('.', ',')}%`
+}
+
+function corDesagio(v) {
+  if (v === null || v === undefined) return '#6c757d'
+  const n = Number(v)
+  if (n >= 0) return '#1a5f2a'        // verde — pagando acima da praça (favorável)
+  if (n >= -5) return '#b88600'       // amarelo — ligeiramente abaixo
+  return '#c0392b'                    // vermelho — bem abaixo (operação difícil)
+}
 
 function corLinha(idx) {
   if (idx < 3) return '#e8f5e9'
@@ -142,7 +177,7 @@ const tituloRanking = computed(() => {
 const subtituloRanking = computed(() => {
   const qtd = resultadosFiltrados.value.length
   return ehComIcms.value
-    ? `${qtd} origens · ordenadas por maior praça`
+    ? `${qtd} origens · ordenadas por melhor ágio sobre a praça`
     : `${qtd} origens · ordenadas por menor custo colocado`
 })
 </script>
@@ -208,7 +243,12 @@ const subtituloRanking = computed(() => {
             </select>
           </div>
           <div class="col-md-3" v-if="ehComIcms">
-            <label class="form-label fw-semibold">R$/kg Colocado</label>
+            <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
+              <span>R$/kg Colocado</span>
+              <span class="text-muted fw-normal" style="font-size:0.7rem">
+                <kbd>Enter</kbd> p/ calcular
+              </span>
+            </label>
             <div class="input-group">
               <span class="input-group-text">R$</span>
               <input
@@ -218,6 +258,8 @@ const subtituloRanking = computed(() => {
                 class="form-control"
                 placeholder="0,000"
                 @input="aoDigitar"
+                @blur="dispararBuscaPorPreco"
+                @keyup.enter="dispararBuscaPorPreco"
               />
             </div>
           </div>
@@ -268,18 +310,40 @@ const subtituloRanking = computed(() => {
             <div style="font-size:1.8rem;font-weight:800;color:#1a5f2a">{{ resultadosFiltrados.length }}</div>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm text-center py-3" style="background:#e8f5e9">
-            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em">Melhor praça</div>
-            <div style="font-size:1.8rem;font-weight:800;color:#1a5f2a">{{ fmtR3(melhorValor) }}</div>
+        <!-- Modo A: cards de ágio/deságio -->
+        <template v-if="ehComIcms">
+          <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3" style="background:#e8f5e9">
+              <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em">Melhor ágio</div>
+              <div style="font-size:1.8rem;font-weight:800" :style="{ color: corDesagio(melhorDesagio) }">
+                {{ fmtPct(melhorDesagio) }}
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm text-center py-3" style="background:#fff8f0">
-            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em">Pior praça</div>
-            <div style="font-size:1.8rem;font-weight:800;color:#c0392b">{{ fmtR3(piorValor) }}</div>
+          <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3" style="background:#fff8f0">
+              <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em">Pior deságio</div>
+              <div style="font-size:1.8rem;font-weight:800" :style="{ color: corDesagio(piorDesagio) }">
+                {{ fmtPct(piorDesagio) }}
+              </div>
+            </div>
           </div>
-        </div>
+        </template>
+        <!-- Modo B: cards de R$/kg -->
+        <template v-else>
+          <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3" style="background:#e8f5e9">
+              <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em">Melhor praça</div>
+              <div style="font-size:1.8rem;font-weight:800;color:#1a5f2a">{{ fmtR3(melhorValor) }}</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3" style="background:#fff8f0">
+              <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em">Pior praça</div>
+              <div style="font-size:1.8rem;font-weight:800;color:#c0392b">{{ fmtR3(piorValor) }}</div>
+            </div>
+          </div>
+        </template>
         <div class="col-md-3">
           <div class="card border-0 shadow-sm text-center py-3">
             <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em">Categoria</div>
@@ -307,6 +371,12 @@ const subtituloRanking = computed(() => {
           <i class="bi bi-info-circle me-1"></i>
           Origens cuja UF está com cotação zerada (R$ 0,00/@) são omitidas do ranking — praça não está comprando.
         </div>
+        <div v-else class="px-3 py-2 small text-muted border-bottom" style="background:#fafafa">
+          <i class="bi bi-info-circle me-1"></i>
+          <strong>Ágio/Deságio</strong> = quanto o preço objetivo está acima (+) ou abaixo (−) da cotação local da praça.
+          <span class="text-success fw-semibold">Positivo</span> = pagando acima da praça (operação fácil).
+          <span class="text-danger fw-semibold">Negativo</span> = pagando abaixo (operação difícil).
+        </div>
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0">
@@ -317,9 +387,10 @@ const subtituloRanking = computed(() => {
                   <th class="text-end">Distância</th>
                   <th class="text-end">Frete/kg</th>
                   <th v-if="ehComIcms" class="text-end">ICMS</th>
-                  <th v-else class="text-end">Cotação Praça</th>
+                  <th class="text-end">Cotação Praça @</th>
                   <th class="text-end" style="color:#1a5f2a">{{ labelColunaDestaque }}</th>
                   <th class="text-end" style="color:#1a5f2a">@ Arroba</th>
+                  <th v-if="ehComIcms" class="text-end">Ágio/Deságio</th>
                 </tr>
               </thead>
               <tbody>
@@ -341,14 +412,17 @@ const subtituloRanking = computed(() => {
                   <td v-if="ehComIcms" class="text-end text-muted small">
                     {{ row.valorIcms ? fmtR4(row.valorIcms) : '—' }}
                   </td>
-                  <td v-else class="text-end text-muted small">
-                    {{ fmtR3(row.cotacaoPracaKg) }}
+                  <td class="text-end text-muted small">
+                    {{ row.cotacaoPracaKg ? fmtArroba(row.cotacaoPracaKg) : '—' }}
                   </td>
                   <td class="text-end fw-bold" :style="{ color: idx < 3 ? '#1a5f2a' : '' }">
                     {{ fmtR3(valorOrdenacao(row)) }}
                   </td>
                   <td class="text-end fw-semibold text-muted">
                     {{ fmtArroba(valorOrdenacao(row)) }}
+                  </td>
+                  <td v-if="ehComIcms" class="text-end fw-bold" :style="{ color: corDesagio(row.desagioPercentual) }">
+                    {{ fmtPct(row.desagioPercentual) }}
                   </td>
                 </tr>
               </tbody>
