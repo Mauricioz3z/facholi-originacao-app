@@ -99,6 +99,12 @@ function isActive(path) {
             </router-link>
           </li>
           <li class="nav-item">
+            <router-link to="/oportunidades" class="nav-link" :class="{ active: isActive('/oportunidades') }">
+              <i class="bi bi-map-fill"></i>
+              <span>Mapa de Oportunidades</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
             <router-link to="/admin/config-comissao" class="nav-link" :class="{ active: isActive('/admin/config-comissao') }">
               <i class="bi bi-gear-fill"></i>
               <span>Comissão / Config.</span>
