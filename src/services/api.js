@@ -36,6 +36,7 @@ export const simulacaoApi = {
   calcular: (data) => api.post('/simulacao', data),
   rapida: (origemId, destinoId) => api.get(`/simulacao/rapida?origemId=${origemId}&destinoId=${destinoId}`),
   oportunidades: (categoriaId, precoColocado) => api.get(`/simulacao/oportunidades?categoriaId=${categoriaId}&precoColocado=${precoColocado}`),
+  oportunidadesPraca: (categoriaId) => api.get(`/simulacao/oportunidades-praca?categoriaId=${categoriaId}`),
 }
 
 // Negociações
