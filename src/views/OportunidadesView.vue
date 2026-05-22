@@ -164,8 +164,20 @@ function categoriaNomeCompleto(id) {
 }
 
 const labelColunaDestaque = computed(() =>
-  ehComIcms.value ? 'R$/kg Praça' : 'R$/kg Colocado'
+  ehComIcms.value ? 'R$/kg na Praça' : 'R$/kg Colocado'
 )
+
+const labelColunaArroba = computed(() =>
+  ehComIcms.value ? 'R$/@ na Praça' : '@ Arroba'
+)
+
+// Função para exibir a cotação @ na coluna verde:
+//  - Modo A: usa o valor cru da UF (sem ágio) — definição da diretoria/Israel
+//  - Modo B: cotação com ágio convertida para R$/@ (faz parte do cálculo do custo)
+function cotacaoArrobaExibida(row) {
+  if (ehComIcms.value) return row.valorArrobaUf
+  return row.cotacaoPracaKg ? row.cotacaoPracaKg * 30 : 0
+}
 
 const tituloRanking = computed(() => {
   if (ehComIcms.value) {
@@ -373,9 +385,10 @@ const subtituloRanking = computed(() => {
         </div>
         <div v-else class="px-3 py-2 small text-muted border-bottom" style="background:#fafafa">
           <i class="bi bi-info-circle me-1"></i>
-          <strong>Ágio/Deságio</strong> = quanto o preço objetivo está acima (+) ou abaixo (−) da cotação local da praça.
-          <span class="text-success fw-semibold">Positivo</span> = pagando acima da praça (operação fácil).
+          <strong>Ágio/Deságio</strong> = quanto o <strong>R$/@ na Praça</strong> (preço-alvo na origem) está acima (+) ou abaixo (−) da <strong>Cotação Praça @</strong> oficial da UF.
+          <span class="text-success fw-semibold">Positivo</span> = pagando acima da praça (região atrativa para fomentar negócio).
           <span class="text-danger fw-semibold">Negativo</span> = pagando abaixo (operação difícil).
+          <span class="text-muted">Tela de relatório — ajuste fino na Simulação Rápida.</span>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
@@ -389,7 +402,7 @@ const subtituloRanking = computed(() => {
                   <th v-if="ehComIcms" class="text-end">ICMS</th>
                   <th class="text-end">Cotação Praça @</th>
                   <th class="text-end" style="color:#1a5f2a">{{ labelColunaDestaque }}</th>
-                  <th class="text-end" style="color:#1a5f2a">@ Arroba</th>
+                  <th class="text-end" style="color:#1a5f2a">{{ labelColunaArroba }}</th>
                   <th v-if="ehComIcms" class="text-end">Ágio/Deságio</th>
                 </tr>
               </thead>
@@ -413,7 +426,10 @@ const subtituloRanking = computed(() => {
                     {{ row.valorIcms ? fmtR4(row.valorIcms) : '—' }}
                   </td>
                   <td class="text-end text-muted small">
-                    {{ row.cotacaoPracaKg ? fmtArroba(row.cotacaoPracaKg) : '—' }}
+                    <template v-if="cotacaoArrobaExibida(row)">
+                      R$ {{ Number(cotacaoArrobaExibida(row)).toFixed(2).replace('.', ',') }}
+                    </template>
+                    <template v-else>—</template>
                   </td>
                   <td class="text-end fw-bold" :style="{ color: idx < 3 ? '#1a5f2a' : '' }">
                     {{ fmtR3(valorOrdenacao(row)) }}
