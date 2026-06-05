@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   negociacaoApi, corretoresApi, municipiosOrigemApi,
@@ -26,12 +26,21 @@ const categorias = ref([])
 const carregando = ref(false)
 const salvando = ref(false)
 const erro = ref('')
+const obsRef = ref(null)
+
+function autoResizeObs() {
+  const el = obsRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
 
 const form = ref({
   corretorId: '',
   municipioOrigemId: '',
   municipioDestinoId: '',
   dataPrevistaEntrega: '',
+  observacoes: '',
   itens: []
 })
 
@@ -78,6 +87,8 @@ async function carregar() {
       form.value.dataPrevistaEntrega = neg.dataPrevistaEntrega
         ? new Date(neg.dataPrevistaEntrega).toISOString().substring(0, 10)
         : ''
+      form.value.observacoes = neg.observacoes || ''
+      nextTick(autoResizeObs)
       for (const itemNeg of neg.itens) {
         const itemForm = form.value.itens.find(i => i.categoriaId === itemNeg.categoriaId)
         if (itemForm) {
@@ -122,6 +133,7 @@ async function salvar() {
     municipioOrigemId: Number(form.value.municipioOrigemId),
     municipioDestinoId: Number(form.value.municipioDestinoId),
     dataPrevistaEntrega: form.value.dataPrevistaEntrega || null,
+    observacoes: form.value.observacoes?.trim() || null,
     itens: itensAtivos.map(i => ({
       categoriaId: i.categoriaId,
       qtdNegociada: i.qtdNegociada ? Number(i.qtdNegociada) : null,
@@ -233,13 +245,29 @@ onMounted(carregar)
             />
           </div>
 
-          <div>
+          <div style="margin-bottom:1rem">
             <label class="pwa-label">Data Prevista de Entrega</label>
             <input
               v-model="form.dataPrevistaEntrega"
               type="date"
               class="pwa-input"
             />
+          </div>
+
+          <div>
+            <label class="pwa-label">Observações</label>
+            <textarea
+              ref="obsRef"
+              v-model="form.observacoes"
+              class="pwa-input pwa-obs-textarea"
+              rows="3"
+              maxlength="500"
+              placeholder="Observações sobre a negociação (opcional)..."
+              @input="autoResizeObs"
+            ></textarea>
+            <div style="font-size:0.78rem;color:var(--pwa-texto-suave);text-align:right;margin-top:0.25rem">
+              {{ (form.observacoes || '').length }}/500
+            </div>
           </div>
         </div>
       </div>
@@ -325,3 +353,12 @@ onMounted(carregar)
     </form>
   </div>
 </template>
+
+<style scoped>
+.pwa-obs-textarea {
+  resize: none;          /* sem alça — cresce sozinho */
+  overflow: hidden;      /* evita barra de rolagem interna durante o auto-grow */
+  min-height: 96px;      /* ~3 linhas iniciais */
+  line-height: 1.4;
+}
+</style>

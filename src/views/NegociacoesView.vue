@@ -179,6 +179,7 @@ onMounted(() => {
                 <th class="text-end">Cabeças</th>
                 <th>Criado em</th>
                 <th>Entrega Prev.</th>
+                <th style="min-width:180px">Observações</th>
                 <th></th>
               </tr>
             </thead>
@@ -192,6 +193,10 @@ onMounted(() => {
                 <td class="text-end fw-semibold">{{ totalCabecas(neg).toLocaleString('pt-BR') }}</td>
                 <td class="text-muted small">{{ fmtData(neg.criadoEm) }}</td>
                 <td class="text-muted small">{{ fmtData(neg.dataPrevistaEntrega) }}</td>
+                <td class="small">
+                  <span v-if="neg.observacoes" class="obs-cell text-muted" :title="neg.observacoes">{{ neg.observacoes }}</span>
+                  <span v-else class="text-muted">—</span>
+                </td>
                 <td class="text-end">
                   <router-link :to="`/negociacoes/${neg.id}`" class="btn btn-sm btn-outline-primary me-1" title="Visualizar">
                     <i class="bi bi-eye"></i>
@@ -227,3 +232,19 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.obs-cell {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 280px;
+  line-height: 1.25;
+  cursor: help;
+}
+</style>

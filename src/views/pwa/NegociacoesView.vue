@@ -181,6 +181,9 @@ onMounted(carregar)
           {{ fmtData(neg.criadoEm) }}
         </span>
       </div>
+      <div v-if="neg.observacoes" class="pwa-neg-obs">
+        <i class="bi bi-chat-left-text" style="margin-right:5px"></i>{{ neg.observacoes }}
+      </div>
     </div>
 
     <!-- FAB nova negociação -->
@@ -193,3 +196,21 @@ onMounted(carregar)
     </button>
   </div>
 </template>
+
+<style scoped>
+.pwa-neg-obs {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--pwa-borda);
+  font-size: 0.8rem;
+  color: var(--pwa-texto-suave);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+</style>

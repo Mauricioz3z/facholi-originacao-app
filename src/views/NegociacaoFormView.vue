@@ -13,6 +13,7 @@ const form = ref({
   municipioOrigemId: '',
   municipioDestinoId: '',
   dataPrevistaEntrega: '',
+  observacoes: '',
   itens: []
 })
 
@@ -88,6 +89,7 @@ async function carregar() {
       form.value.municipioOrigemId = neg.municipioOrigemId
       form.value.municipioDestinoId = neg.municipioDestinoId
       form.value.dataPrevistaEntrega = neg.dataPrevistaEntrega ? neg.dataPrevistaEntrega.split('T')[0] : ''
+      form.value.observacoes = neg.observacoes || ''
 
       // Preencher itens existentes
       for (const item of form.value.itens) {
@@ -127,6 +129,7 @@ async function salvar() {
       municipioOrigemId: Number(form.value.municipioOrigemId),
       municipioDestinoId: Number(form.value.municipioDestinoId),
       dataPrevistaEntrega: form.value.dataPrevistaEntrega || null,
+      observacoes: form.value.observacoes?.trim() || null,
       itens: itensAtivos.map(i => ({
         categoriaId: i.categoriaId,
         qtdNegociada: i.qtdNegociada ? Number(i.qtdNegociada) : null,
@@ -231,6 +234,19 @@ onMounted(carregar)
             <div class="col-md-3">
               <label class="form-label fw-semibold">Data Prevista de Entrega</label>
               <input v-model="form.dataPrevistaEntrega" type="date" class="form-control" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Observações</label>
+              <textarea
+                v-model="form.observacoes"
+                class="form-control"
+                rows="3"
+                maxlength="500"
+                placeholder="Observações sobre a negociação (opcional)..."
+              ></textarea>
+              <div class="text-muted small text-end mt-1">
+                {{ (form.observacoes || '').length }}/500
+              </div>
             </div>
           </div>
         </div>

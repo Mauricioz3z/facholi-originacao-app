@@ -174,6 +174,14 @@ onMounted(carregar)
         </div>
       </div>
 
+      <!-- Observações -->
+      <div v-if="neg.observacoes" class="card mb-4">
+        <div class="card-header bg-white fw-semibold">Observações</div>
+        <div class="card-body">
+          <p class="mb-0" style="white-space: pre-wrap; word-break: break-word;">{{ neg.observacoes }}</p>
+        </div>
+      </div>
+
       <!-- Itens da negociação -->
       <div class="card mb-4">
         <div class="card-header bg-white fw-semibold">Itens Negociados</div>

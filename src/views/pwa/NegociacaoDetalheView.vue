@@ -176,6 +176,10 @@ onMounted(carregar)
             <span class="pwa-info-label">Criado em</span>
             <span class="pwa-info-value">{{ fmtData(neg.criadoEm) }}</span>
           </div>
+          <div v-if="neg.observacoes" style="padding:0.75rem 1rem;border-top:1px solid var(--pwa-borda)">
+            <div class="pwa-info-label" style="margin-bottom:0.35rem">Observações</div>
+            <div style="font-size:0.9rem;color:var(--pwa-texto);line-height:1.4;white-space:pre-wrap;word-break:break-word">{{ neg.observacoes }}</div>
+          </div>
         </div>
       </div>
 
