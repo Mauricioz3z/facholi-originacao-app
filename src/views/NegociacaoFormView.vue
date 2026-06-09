@@ -120,6 +120,11 @@ async function salvar() {
     erro.value = 'Selecione ao menos uma categoria para a negociação.'
     return
   }
+  const totalCabecas = itensAtivos.reduce((soma, i) => soma + (Number(i.qtdNegociada) || 0), 0)
+  if (totalCabecas <= 0) {
+    erro.value = 'Informe a quantidade de cabeças em pelo menos uma categoria. Não é possível salvar uma negociação com zero animais.'
+    return
+  }
 
   salvando.value = true
   try {
