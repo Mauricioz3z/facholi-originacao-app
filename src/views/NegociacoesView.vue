@@ -201,7 +201,7 @@ onMounted(() => {
                   <router-link :to="`/negociacoes/${neg.id}`" class="btn btn-sm btn-outline-primary me-1" title="Visualizar">
                     <i class="bi bi-eye"></i>
                   </router-link>
-                  <router-link v-if="neg.status === 'EmNegociacao'" :to="`/negociacoes/${neg.id}/editar`" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
+                  <router-link v-if="neg.status === 'EmNegociacao' || auth.isAdmin" :to="`/negociacoes/${neg.id}/editar`" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </router-link>
                   <button class="btn btn-sm btn-outline-danger" title="Excluir" @click="excluir(neg)">

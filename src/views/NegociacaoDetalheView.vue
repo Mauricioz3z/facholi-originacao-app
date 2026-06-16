@@ -2,9 +2,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { negociacaoApi } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const neg = ref(null)
 const carregando = ref(false)
 const salvandoEntrega = ref(false)
@@ -124,7 +126,7 @@ onMounted(carregar)
           </div>
         </div>
         <div class="d-flex gap-2">
-          <router-link v-if="neg.status === 'EmNegociacao'" :to="`/negociacoes/${neg.id}/editar`" class="btn btn-outline-secondary btn-sm">
+          <router-link v-if="neg.status === 'EmNegociacao' || auth.isAdmin" :to="`/negociacoes/${neg.id}/editar`" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-pencil me-1"></i> Editar
           </router-link>
           <button v-if="neg.status === 'EmNegociacao'" class="btn btn-success btn-sm" @click="fechar" :disabled="fechando">
