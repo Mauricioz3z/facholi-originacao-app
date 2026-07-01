@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { dashboardApi, usuariosApi, corretoresApi } from '../services/api'
 
 const visao = ref('compradores')
@@ -23,8 +23,26 @@ const filtros = ref({
   compradorId: '',
   corretorId: '',
   uf: '',
-  status: 'Todos'
+  status: 'Todos',
+  ano: '',
+  mes: ''
 })
+
+const anosDisponiveis = ref([])
+const meses = [
+  { valor: 1, nome: 'Janeiro' },
+  { valor: 2, nome: 'Fevereiro' },
+  { valor: 3, nome: 'Março' },
+  { valor: 4, nome: 'Abril' },
+  { valor: 5, nome: 'Maio' },
+  { valor: 6, nome: 'Junho' },
+  { valor: 7, nome: 'Julho' },
+  { valor: 8, nome: 'Agosto' },
+  { valor: 9, nome: 'Setembro' },
+  { valor: 10, nome: 'Outubro' },
+  { valor: 11, nome: 'Novembro' },
+  { valor: 12, nome: 'Dezembro' }
+]
 
 const expandidosComprador = ref(new Set())
 const expandidosCorretor = ref(new Set())
@@ -68,7 +86,9 @@ function params() {
     compradorId: filtros.value.compradorId || undefined,
     corretorId: filtros.value.corretorId || undefined,
     uf: filtros.value.uf || undefined,
-    status: filtros.value.status !== 'Todos' ? filtros.value.status : undefined
+    status: filtros.value.status !== 'Todos' ? filtros.value.status : undefined,
+    ano: filtros.value.ano || undefined,
+    mes: filtros.value.mes || undefined
   }
 }
 
@@ -137,12 +157,14 @@ async function toggleExpansaoCategoria(categoriaId) {
 }
 
 async function carregarFiltros() {
-  const [u, c] = await Promise.all([
+  const [u, c, a] = await Promise.all([
     usuariosApi.listar({ ativo: true }),
-    corretoresApi.listar({ ativo: true })
+    corretoresApi.listar({ ativo: true }),
+    dashboardApi.anos()
   ])
   listaCompradores.value = u.data
   listaCorretores.value = c.data
+  anosDisponiveis.value = a.data
 }
 
 async function toggleExpansaoComprador(compradorId) {
@@ -215,12 +237,73 @@ function statusLabel(s) {
 }
 
 async function carregarResumoCabecas() {
-  const res = await dashboardApi.resumoCabecas()
+  const res = await dashboardApi.resumoCabecas(params())
   cbAndamento.value = res.data.totalAndamento
   cbFechadas.value = res.data.totalFechadas
   negAndamento.value = res.data.negociacoesAndamento ?? 0
   negFechadas.value = res.data.negociacoesFechadas ?? 0
   porCategoriaCb.value = res.data.porCategoria
+}
+
+// ===== Exportação para PDF =====
+const exportando = ref(false)
+
+const temDados = computed(() => {
+  if (visao.value === 'compradores') return compradores.value.length > 0
+  if (visao.value === 'corretores') return corretores.value.length > 0
+  return categorias.value.length > 0
+})
+
+function descricaoFiltros() {
+  const f = filtros.value
+  let periodo
+  const mesNome = f.mes ? (meses.find(m => m.valor === Number(f.mes))?.nome) : null
+  if (f.ano && mesNome) periodo = `${mesNome}/${f.ano}`
+  else if (f.ano) periodo = `${f.ano}`
+  else if (mesNome) periodo = `${mesNome} (todos os anos)`
+  else periodo = 'Todos os períodos'
+
+  const comprador = f.compradorId
+    ? (listaCompradores.value.find(u => u.id === Number(f.compradorId))?.nome || '—')
+    : 'Todos'
+  const corretor = f.corretorId
+    ? (listaCorretores.value.find(c => c.id === Number(f.corretorId))?.nome || '—')
+    : 'Todos'
+  const statusLabels = { Todos: 'Todos', EmNegociacao: 'Em Negociação', Fechado: 'Fechado' }
+
+  return [
+    { rotulo: 'Período', valor: periodo },
+    { rotulo: 'Comprador', valor: comprador },
+    { rotulo: 'Corretor', valor: corretor },
+    { rotulo: 'UF', valor: f.uf ? f.uf.toUpperCase() : 'Todas' },
+    { rotulo: 'Status', valor: statusLabels[f.status] || 'Todos' }
+  ]
+}
+
+async function exportarPdf() {
+  exportando.value = true
+  try {
+    const { gerarRelatorioDashboard } = await import('../services/relatorioPdf')
+    await gerarRelatorioDashboard({
+      visao: visao.value,
+      filtros: descricaoFiltros(),
+      totais: totais.value,
+      resumo: {
+        negAndamento: negAndamento.value,
+        cbAndamento: cbAndamento.value,
+        negFechadas: negFechadas.value,
+        cbFechadas: cbFechadas.value,
+        porCategoria: porCategoriaCb.value
+      },
+      dados: {
+        compradores: compradores.value,
+        corretores: corretores.value,
+        categorias: categorias.value
+      }
+    })
+  } finally {
+    exportando.value = false
+  }
 }
 
 onMounted(() => {
@@ -373,18 +456,40 @@ onMounted(() => {
             </select>
           </div>
           <div class="col-md-2">
-            <input v-model="filtros.uf" class="form-control form-control-sm" placeholder="UF" maxlength="2" />
+            <select v-model="filtros.ano" class="form-select form-select-sm">
+              <option value="">Todos os anos</option>
+              <option v-for="a in anosDisponiveis" :key="a" :value="a">{{ a }}</option>
+            </select>
           </div>
           <div class="col-md-2">
+            <select v-model="filtros.mes" class="form-select form-select-sm">
+              <option value="">Todos os meses</option>
+              <option v-for="m in meses" :key="m.valor" :value="m.valor">{{ m.nome }}</option>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <input v-model="filtros.uf" class="form-control form-control-sm" placeholder="UF" maxlength="2" />
+          </div>
+          <div class="col-md-1">
             <select v-model="filtros.status" class="form-select form-select-sm">
-              <option value="Todos">Todos os status</option>
+              <option value="Todos">Status</option>
               <option value="EmNegociacao">Em Negociação</option>
               <option value="Fechado">Fechado</option>
             </select>
           </div>
-          <div class="col-md-2">
-            <button class="btn btn-primary btn-sm w-100" @click="carregarDados(); carregarTotais()">Filtrar</button>
-          </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+          <span class="text-muted small me-auto">
+            <i class="bi bi-info-circle me-1"></i>O relatório em PDF respeita os filtros aplicados acima.
+          </span>
+          <button class="btn btn-primary btn-sm" @click="carregarDados(); carregarTotais(); carregarResumoCabecas()">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+          </button>
+          <button class="btn btn-success btn-sm" @click="exportarPdf" :disabled="exportando || !temDados">
+            <span v-if="exportando" class="spinner-border spinner-border-sm me-1"></span>
+            <i v-else class="bi bi-file-earmark-pdf me-1"></i>
+            Exportar PDF
+          </button>
         </div>
       </div>
     </div>
