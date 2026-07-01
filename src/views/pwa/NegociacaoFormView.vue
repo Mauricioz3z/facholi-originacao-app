@@ -27,6 +27,9 @@ const carregando = ref(false)
 const salvando = ref(false)
 const erro = ref('')
 const obsRef = ref(null)
+// Comprador original da negociação em edição (preservado para não reatribuir
+// a negociação ao Admin que está editando).
+const compradorIdEdicao = ref(null)
 
 function autoResizeObs() {
   const el = obsRef.value
@@ -73,7 +76,7 @@ async function carregar() {
     if (modoEdicao.value) {
       const res = await negociacaoApi.obter(editandoId.value)
       const neg = res.data
-      if (neg.status === 'Fechado') {
+      if (neg.status === 'Fechado' && !auth.isAdmin) {
         erro.value = 'Esta negociação está fechada e não pode ser editada.'
         return
       }
@@ -81,6 +84,7 @@ async function carregar() {
         erro.value = 'Você só pode editar negociações que você mesmo criou.'
         return
       }
+      compradorIdEdicao.value = neg.compradorId
       form.value.corretorId = neg.corretorId
       form.value.municipioOrigemId = neg.municipioOrigemId
       form.value.municipioDestinoId = neg.municipioDestinoId
@@ -133,7 +137,8 @@ async function salvar() {
   }
 
   const payload = {
-    compradorId: auth.user?.id,
+    // Em edição, preserva o comprador original; na criação, usa o usuário atual.
+    compradorId: modoEdicao.value ? compradorIdEdicao.value : auth.user?.id,
     corretorId: Number(form.value.corretorId),
     municipioOrigemId: Number(form.value.municipioOrigemId),
     municipioDestinoId: Number(form.value.municipioDestinoId),

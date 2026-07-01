@@ -263,6 +263,17 @@ onMounted(carregar)
           <i v-else class="bi bi-check-circle-fill"></i>
           Salvar Entrega
         </button>
+
+        <!-- Admin pode editar qualquer dado, mesmo com a negociação fechada -->
+        <button
+          v-if="auth.isAdmin"
+          class="pwa-btn pwa-btn-outline"
+          style="margin-top:0.5rem"
+          @click="router.push('/app/negociacoes/' + neg.id + '/editar')"
+        >
+          <i class="bi bi-pencil"></i>
+          Editar Negociação
+        </button>
       </template>
 
       <!-- Fechar negociação (só para em andamento e dono/admin) -->

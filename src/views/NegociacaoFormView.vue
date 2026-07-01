@@ -19,12 +19,25 @@ const form = ref({
 
 const listaCompradores = ref([])
 const listaCorretores = ref([])
+// Comprador da negociação em edição — preservado para aparecer no select
+// mesmo que esteja inativo ou com perfil diferente de "Comprador".
+const compradorAtual = ref(null)
 const origens = ref([])
 const destinos = ref([])
 const categorias = ref([])
 const carregando = ref(false)
 const salvando = ref(false)
 const erro = ref('')
+
+// Opções do select de comprador: ativos com perfil "Comprador" + o comprador
+// atual da negociação (caso tenha sido filtrado por estar inativo/outro perfil).
+const compradoresDisponiveis = computed(() => {
+  const lista = listaCompradores.value.filter(x => x.perfil === 'Comprador')
+  if (compradorAtual.value && !lista.some(u => u.id === compradorAtual.value.id)) {
+    return [compradorAtual.value, ...lista]
+  }
+  return lista
+})
 
 // Inicializar itens para todas as categorias
 function inicializarItens() {
@@ -84,6 +97,7 @@ async function carregar() {
     if (isEdicao.value) {
       const res = await negociacaoApi.obter(route.params.id)
       const neg = res.data
+      compradorAtual.value = { id: neg.compradorId, nome: neg.compradorNome, perfil: 'Comprador' }
       form.value.compradorId = neg.compradorId
       form.value.corretorId = neg.corretorId
       form.value.municipioOrigemId = neg.municipioOrigemId
@@ -209,7 +223,7 @@ onMounted(carregar)
               <label class="form-label fw-semibold">Comprador <span class="text-danger">*</span></label>
               <select v-model="form.compradorId" class="form-select" required>
                 <option value="">Selecione o comprador...</option>
-                <option v-for="u in listaCompradores.filter(x => x.perfil === 'Comprador')" :key="u.id" :value="u.id">{{ u.nome }}</option>
+                <option v-for="u in compradoresDisponiveis" :key="u.id" :value="u.id">{{ u.nome }}</option>
               </select>
             </div>
             <div class="col-md-6">
