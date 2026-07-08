@@ -61,7 +61,12 @@ async function abrir() {
   termo.value = ''
   aberto.value = true
   await nextTick()
-  if (inputBusca.value) inputBusca.value.focus()
+  // Espera a animação de subida da gaveta (pwasb-up, 0.22s) terminar antes de
+  // focar o campo de busca. Focar durante a animação faz o iOS abrir o teclado
+  // no meio da transição e "rolar" a gaveta, escondendo a busca da tela.
+  setTimeout(() => {
+    if (inputBusca.value) inputBusca.value.focus()
+  }, 260)
 }
 
 function fechar() {
