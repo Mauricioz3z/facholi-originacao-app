@@ -11,10 +11,13 @@ const total = ref(0)
 const carregando = ref(false)
 const statusFiltro = ref('Todos')
 const apenasMinhas = ref(false)
+const mostrarConcluidas = ref(false)
 
 const negociacoesFiltradas = computed(() => {
-  if (!apenasMinhas.value) return negociacoes.value
-  return negociacoes.value.filter(n => n.compradorId === auth.user?.id)
+  let lista = negociacoes.value
+  if (apenasMinhas.value) lista = lista.filter(n => n.compradorId === auth.user?.id)
+  if (!mostrarConcluidas.value) lista = lista.filter(n => !concluida(n))
+  return lista
 })
 
 async function carregar() {
@@ -51,6 +54,10 @@ function percentualEntrega(neg) {
   const qtdEnt = neg.itens.reduce((s, i) => s + (i.qtdEntregue || 0), 0)
   if (qtdNeg === 0) return 0
   return Math.round(qtdEnt / qtdNeg * 100)
+}
+
+function concluida(neg) {
+  return neg.status === 'Fechado' && percentualEntrega(neg) >= 100
 }
 
 function filtrar(status) {
@@ -117,6 +124,15 @@ onMounted(carregar)
       </span>
     </div>
 
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin-bottom:1rem;font-size:0.82rem;color:var(--pwa-texto-suave);font-weight:600">
+      <input
+        type="checkbox"
+        v-model="mostrarConcluidas"
+        style="width:18px;height:18px;accent-color:var(--pwa-verde);cursor:pointer;flex-shrink:0;margin:0"
+      />
+      Mostrar concluídas
+    </label>
+
     <div v-if="carregando" class="text-center py-5">
       <div class="spinner-border" style="color:var(--pwa-verde)"></div>
     </div>
@@ -134,8 +150,8 @@ onMounted(carregar)
       :key="neg.id"
       class="pwa-neg-card"
       :class="{
-        fechado:   neg.status === 'Fechado' && percentualEntrega(neg) < 100,
-        concluido: neg.status === 'Fechado' && percentualEntrega(neg) >= 100
+        fechado:   neg.status === 'Fechado' && !concluida(neg),
+        concluido: concluida(neg)
       }"
       @click="router.push('/app/negociacoes/' + neg.id)"
     >
@@ -147,11 +163,11 @@ onMounted(carregar)
         <span
           class="pwa-badge"
           :class="neg.status !== 'Fechado' ? 'pwa-badge-laranja'
-                : percentualEntrega(neg) >= 100 ? 'pwa-badge-cinza'
+                : concluida(neg) ? 'pwa-badge-cinza'
                 : 'pwa-badge-verde'"
         >
           {{ neg.status !== 'Fechado' ? 'Em Andamento'
-           : percentualEntrega(neg) >= 100 ? 'Concluído'
+           : concluida(neg) ? 'Concluído'
            : 'Fechado' }}
         </span>
       </div>

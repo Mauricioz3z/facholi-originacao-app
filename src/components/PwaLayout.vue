@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useAppVersion } from '../composables/useAppVersion'
@@ -15,6 +15,20 @@ function logout() {
   auth.logout()
   router.push('/login')
 }
+
+// iOS Safari: com topbar/bottom-nav em position:fixed, o scroll automático
+// do navegador ao abrir o teclado erra o cálculo e "estoura" até o fim da
+// página. Recentraliza o campo focado depois que o teclado termina de abrir,
+// corrigindo o salto (não ocorre no Android, que não tem esse defeito).
+function recentralizarCampoFocado(e) {
+  const el = e.target
+  if (!(el instanceof HTMLElement)) return
+  if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
+  setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+}
+
+onMounted(() => document.addEventListener('focusin', recentralizarCampoFocado))
+onUnmounted(() => document.removeEventListener('focusin', recentralizarCampoFocado))
 </script>
 
 <template>

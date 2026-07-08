@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { negociacaoApi, usuariosApi, corretoresApi } from '../services/api'
 import { useAuthStore } from '../stores/auth'
@@ -21,6 +21,7 @@ const filtros = ref({
   pagina: 1,
   tamanhoPagina: 20
 })
+const mostrarConcluidas = ref(false)
 
 async function carregar() {
   carregando.value = true
@@ -56,12 +57,26 @@ async function carregarFiltros() {
   listaCorretores.value = c.data
 }
 
-function statusBadge(s) {
-  return s === 'Fechado' ? 'badge bg-success' : 'badge badge-andamento'
+function percentualEntrega(neg) {
+  if (!neg?.itens?.length) return 0
+  const qtdNeg = neg.itens.reduce((s, i) => s + (i.qtdNegociada || 0), 0)
+  const qtdEnt = neg.itens.reduce((s, i) => s + (i.qtdEntregue || 0), 0)
+  if (qtdNeg === 0) return 0
+  return Math.round(qtdEnt / qtdNeg * 100)
 }
 
-function statusLabel(s) {
-  return s === 'Fechado' ? 'Fechado' : 'Em Negociação'
+function concluida(neg) {
+  return neg.status === 'Fechado' && percentualEntrega(neg) >= 100
+}
+
+function statusBadge(neg) {
+  if (concluida(neg)) return 'badge bg-secondary'
+  return neg.status === 'Fechado' ? 'badge bg-success' : 'badge badge-andamento'
+}
+
+function statusLabel(neg) {
+  if (concluida(neg)) return 'Concluído'
+  return neg.status === 'Fechado' ? 'Fechado' : 'Em Negociação'
 }
 
 function fmtData(d) {
@@ -95,6 +110,11 @@ async function excluir(neg) {
 }
 
 const totalPaginas = () => Math.ceil(total.value / filtros.value.tamanhoPagina)
+
+const negociacoesFiltradas = computed(() => {
+  if (mostrarConcluidas.value) return negociacoes.value
+  return negociacoes.value.filter(n => !concluida(n))
+})
 
 onMounted(() => {
   carregarFiltros()
@@ -140,7 +160,7 @@ onMounted(() => {
           <div class="col-md-2 d-flex gap-2 align-items-center">
             <button class="btn btn-primary btn-sm flex-grow-1" @click="filtros.pagina = 1; carregar()">Filtrar</button>
           </div>
-          <div class="col-12 d-flex align-items-center">
+          <div class="col-12 d-flex align-items-center gap-4">
             <div class="form-check mb-0">
               <input
                 class="form-check-input"
@@ -151,6 +171,17 @@ onMounted(() => {
               />
               <label class="form-check-label fw-semibold" for="apenasMinhas">
                 Apenas minhas negociações
+              </label>
+            </div>
+            <div class="form-check mb-0">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="mostrarConcluidas"
+                v-model="mostrarConcluidas"
+              />
+              <label class="form-check-label fw-semibold" for="mostrarConcluidas">
+                Mostrar concluídas
               </label>
             </div>
           </div>
@@ -164,7 +195,7 @@ onMounted(() => {
         <div v-if="carregando" class="text-center py-5">
           <div class="spinner-border text-primary"></div>
         </div>
-        <div v-else-if="negociacoes.length === 0" class="text-center text-muted py-5">
+        <div v-else-if="negociacoesFiltradas.length === 0" class="text-center text-muted py-5">
           Nenhuma negociação encontrada.
         </div>
         <div v-else class="table-responsive">
@@ -184,9 +215,9 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="neg in negociacoes" :key="neg.id">
+              <tr v-for="neg in negociacoesFiltradas" :key="neg.id">
                 <td class="fw-semibold">{{ neg.numero }}</td>
-                <td><span :class="statusBadge(neg.status)">{{ statusLabel(neg.status) }}</span></td>
+                <td><span :class="statusBadge(neg)">{{ statusLabel(neg) }}</span></td>
                 <td>{{ neg.compradorNome }}</td>
                 <td>{{ neg.corretorNome }}</td>
                 <td>{{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}</td>

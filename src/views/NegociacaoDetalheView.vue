@@ -91,7 +91,7 @@ function fmtData(d) {
 
 function fmtKg(v) {
   if (!v && v !== 0) return '—'
-  return `R$ ${Number(v).toFixed(4).replace('.', ',')}/kg`
+  return `R$ ${Number(v).toFixed(2).replace('.', ',')}/kg`
 }
 
 const percentualTotal = computed(() => {

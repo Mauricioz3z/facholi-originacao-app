@@ -86,11 +86,6 @@ function fmtData(d) {
 
 function fmtKg(v) {
   if (!v && v !== 0) return '—'
-  return `R$ ${Number(v).toFixed(4).replace('.', ',')}/kg`
-}
-
-function fmtKg2(v) {
-  if (!v && v !== 0) return '—'
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}/kg`
 }
 
@@ -195,7 +190,7 @@ onMounted(carregar)
         <div class="pwa-sim-valores">
           <div class="pwa-sim-campo">
             <div class="pwa-sim-campo-label">R$/kg Praça</div>
-            <div class="pwa-sim-campo-valor praca">{{ fmtKg2(item.precoNegociado) }}</div>
+            <div class="pwa-sim-campo-valor praca">{{ fmtKg(item.precoNegociado) }}</div>
           </div>
           <div class="pwa-sim-campo">
             <div class="pwa-sim-campo-label">R$/kg Colocado</div>
@@ -314,7 +309,7 @@ onMounted(carregar)
                 @click="confirmandoFechamento = false"
               >Cancelar</button>
               <button
-                class="pwa-btn pwa-btn-danger"
+                class="pwa-btn pwa-btn-primary"
                 @click="fechar"
                 :disabled="fechando"
               >

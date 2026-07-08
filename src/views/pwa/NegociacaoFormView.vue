@@ -173,25 +173,25 @@ function voltar() {
   else router.push('/app/negociacoes')
 }
 
-function aplicarMascara3(valor) {
+function aplicarMascaraPreco(valor) {
   const digits = String(valor ?? '').replace(/\D/g, '')
   if (!digits) return ''
-  return (parseInt(digits, 10) / 1000).toLocaleString('pt-BR', {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3
+  return (parseInt(digits, 10) / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   })
 }
 
 function inicializarMascara(valor) {
   if (!valor && valor !== 0) return ''
-  return aplicarMascara3(String(Math.round(Number(valor) * 1000)))
+  return aplicarMascaraPreco(String(Math.round(Number(valor) * 100)))
 }
 
 function aoDigitarPraca(item, evento) {
-  const mascarado = aplicarMascara3(evento.target.value)
+  const mascarado = aplicarMascaraPreco(evento.target.value)
   item.precoNegociadoMask = mascarado
   const digits = mascarado.replace(/\D/g, '')
-  item.precoNegociado = digits ? parseInt(digits, 10) / 1000 : ''
+  item.precoNegociado = digits ? parseInt(digits, 10) / 100 : ''
 }
 
 onMounted(carregar)
@@ -303,7 +303,7 @@ onMounted(carregar)
                 type="text"
                 inputmode="decimal"
                 class="pwa-num-input"
-                placeholder="0,000"
+                placeholder="0,00"
                 required
                 @input="aoDigitarPraca(item, $event)"
               />

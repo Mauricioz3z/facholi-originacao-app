@@ -176,25 +176,25 @@ function fmtKg(v) {
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}/kg`
 }
 
-function aplicarMascara3(valor) {
+function aplicarMascaraPreco(valor) {
   const digits = String(valor ?? '').replace(/\D/g, '')
   if (!digits) return ''
-  return (parseInt(digits, 10) / 1000).toLocaleString('pt-BR', {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3
+  return (parseInt(digits, 10) / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   })
 }
 
 function inicializarMascara(valor) {
   if (!valor && valor !== 0) return ''
-  return aplicarMascara3(String(Math.round(Number(valor) * 1000)))
+  return aplicarMascaraPreco(String(Math.round(Number(valor) * 100)))
 }
 
 function aoDigitarPraca(item, evento) {
-  const mascarado = aplicarMascara3(evento.target.value)
+  const mascarado = aplicarMascaraPreco(evento.target.value)
   item.precoNegociadoMask = mascarado
   const digits = mascarado.replace(/\D/g, '')
-  item.precoNegociado = digits ? parseInt(digits, 10) / 1000 : ''
+  item.precoNegociado = digits ? parseInt(digits, 10) / 100 : ''
 }
 
 onMounted(carregar)
@@ -308,7 +308,7 @@ onMounted(carregar)
                       inputmode="decimal"
                       class="form-control form-control-sm"
                       style="width:110px"
-                      placeholder="0,000"
+                      placeholder="0,00"
                       required
                       @input="aoDigitarPraca(item, $event)"
                     />
