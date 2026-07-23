@@ -25,8 +25,13 @@ const filtros = ref({
   uf: '',
   status: 'Todos',
   ano: '',
-  mes: ''
+  mes: '',
+  dataInicio: '',
+  dataFim: '',
+  comissao: ''
 })
+
+const comissoes = ref(null)
 
 const anosDisponiveis = ref([])
 const meses = [
@@ -88,8 +93,16 @@ function params() {
     uf: filtros.value.uf || undefined,
     status: filtros.value.status !== 'Todos' ? filtros.value.status : undefined,
     ano: filtros.value.ano || undefined,
-    mes: filtros.value.mes || undefined
+    mes: filtros.value.mes || undefined,
+    dataInicio: filtros.value.dataInicio || undefined,
+    dataFim: filtros.value.dataFim || undefined,
+    comissao: filtros.value.comissao || undefined
   }
+}
+
+async function carregarComissoes() {
+  const res = await dashboardApi.comissoes(params())
+  comissoes.value = res.data
 }
 
 async function carregarTotais() {
@@ -228,14 +241,6 @@ function agruparPorCorretor(rows) {
   return grupos
 }
 
-function statusBadge(s) {
-  return s === 'Fechado' ? 'badge bg-success' : 'badge badge-andamento'
-}
-
-function statusLabel(s) {
-  return s === 'Fechado' ? 'Fechado' : 'Em Negociação'
-}
-
 async function carregarResumoCabecas() {
   const res = await dashboardApi.resumoCabecas(params())
   cbAndamento.value = res.data.totalAndamento
@@ -311,6 +316,7 @@ onMounted(() => {
   carregarDados()
   carregarTotais()
   carregarResumoCabecas()
+  carregarComissoes()
 })
 </script>
 
@@ -426,6 +432,31 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Comissão -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="card h-100 border-warning">
+          <div class="card-body">
+            <p class="text-muted small mb-1">Comissão Pendente</p>
+            <p class="fw-bold mb-0 text-warning" style="font-size:1.4rem">
+              {{ comissoes ? `R$ ${Number(comissoes.total_pendente).toFixed(2).replace('.', ',')}` : '—' }}
+            </p>
+            <p class="text-muted small mb-0">{{ comissoes?.negociacoes_pendentes ?? 0 }} negociação(ões)</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100 border-success">
+          <div class="card-body">
+            <p class="text-muted small mb-1">Comissão Paga (no período)</p>
+            <p class="fw-bold mb-0 text-success" style="font-size:1.4rem">
+              {{ comissoes ? `R$ ${Number(comissoes.total_pago).toFixed(2).replace('.', ',')}` : '—' }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="btn-group">
         <button class="btn btn-sm" :class="visao === 'compradores' ? 'btn-primary' : 'btn-outline-primary'" @click="visao = 'compradores'; carregarDados()">
@@ -475,6 +506,21 @@ onMounted(() => {
               <option value="Todos">Status</option>
               <option value="EmNegociacao">Em Negociação</option>
               <option value="Fechado">Fechado</option>
+              <option value="EmEntrega">Em Entrega</option>
+              <option value="Concluido">Concluído</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <input v-model="filtros.dataInicio" type="date" class="form-control form-control-sm" title="Criado a partir de" />
+          </div>
+          <div class="col-md-2">
+            <input v-model="filtros.dataFim" type="date" class="form-control form-control-sm" title="Criado até" />
+          </div>
+          <div class="col-md-2">
+            <select v-model="filtros.comissao" class="form-select form-select-sm">
+              <option value="">Comissão: todas</option>
+              <option value="Paga">Comissão paga</option>
+              <option value="NaoPaga">Comissão pendente</option>
             </select>
           </div>
         </div>
@@ -482,7 +528,7 @@ onMounted(() => {
           <span class="text-muted small me-auto">
             <i class="bi bi-info-circle me-1"></i>O relatório em PDF respeita os filtros aplicados acima.
           </span>
-          <button class="btn btn-primary btn-sm" @click="carregarDados(); carregarTotais(); carregarResumoCabecas()">
+          <button class="btn btn-primary btn-sm" @click="carregarDados(); carregarTotais(); carregarResumoCabecas(); carregarComissoes()">
             <i class="bi bi-funnel me-1"></i>Filtrar
           </button>
           <button class="btn btn-success btn-sm" @click="exportarPdf" :disabled="exportando || !temDados">

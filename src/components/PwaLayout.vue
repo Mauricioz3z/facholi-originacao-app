@@ -126,6 +126,14 @@ onUnmounted(() => document.removeEventListener('focusin', recentralizarCampoFoca
         <i class="bi bi-clipboard-check-fill"></i>
         <span>Negociações</span>
       </router-link>
+      <router-link
+        to="/app/chegada"
+        class="pwa-nav-item"
+        :class="{ active: route.path === '/app/chegada' }"
+      >
+        <i class="bi bi-truck"></i>
+        <span>Chegada</span>
+      </router-link>
     </nav>
   </div>
 </template>

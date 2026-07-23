@@ -44,6 +44,7 @@ const form = ref({
   municipioDestinoId: '',
   dataPrevistaEntrega: '',
   observacoes: '',
+  tipoNegocio: 'KG',
   itens: []
 })
 
@@ -76,7 +77,7 @@ async function carregar() {
     if (modoEdicao.value) {
       const res = await negociacaoApi.obter(editandoId.value)
       const neg = res.data
-      if (neg.status === 'Fechado' && !auth.isAdmin) {
+      if (neg.status !== 'EmNegociacao' && !auth.isAdmin) {
         erro.value = 'Esta negociação está fechada e não pode ser editada.'
         return
       }
@@ -92,6 +93,7 @@ async function carregar() {
         ? new Date(neg.dataPrevistaEntrega).toISOString().substring(0, 10)
         : ''
       form.value.observacoes = neg.observacoes || ''
+      form.value.tipoNegocio = neg.tipoNegocio || 'KG'
       nextTick(autoResizeObs)
       for (const itemNeg of neg.itens) {
         const itemForm = form.value.itens.find(i => i.categoriaId === itemNeg.categoriaId)
@@ -144,6 +146,7 @@ async function salvar() {
     municipioDestinoId: Number(form.value.municipioDestinoId),
     dataPrevistaEntrega: form.value.dataPrevistaEntrega || null,
     observacoes: form.value.observacoes?.trim() || null,
+    tipoNegocio: form.value.tipoNegocio,
     itens: itensAtivos.map(i => ({
       categoriaId: i.categoriaId,
       qtdNegociada: i.qtdNegociada ? Number(i.qtdNegociada) : null,
@@ -253,6 +256,14 @@ onMounted(carregar)
               titulo="Selecionar destino"
               :permitir-limpar="false"
             />
+          </div>
+
+          <div style="margin-bottom:1rem">
+            <label class="pwa-label">Tipo de Negócio</label>
+            <select v-model="form.tipoNegocio" class="pwa-input">
+              <option value="KG">KG</option>
+              <option value="Perna">Perna</option>
+            </select>
           </div>
 
           <div style="margin-bottom:1rem">

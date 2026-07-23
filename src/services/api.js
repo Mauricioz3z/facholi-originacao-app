@@ -47,7 +47,35 @@ export const negociacaoApi = {
   atualizar: (id, data) => api.put(`/negociacoes/${id}`, data),
   fechar: (id) => api.post(`/negociacoes/${id}/fechar`),
   excluir: (id) => api.delete(`/negociacoes/${id}`),
-  atualizarEntrega: (data) => api.put('/negociacoes/entrega', data),
+  alterarStatus: (id, status, motivo) => api.put(`/negociacoes/${id}/status`, { status, motivo }),
+  alterarComissao: (id, paga) => api.put(`/negociacoes/${id}/comissao`, { paga }),
+}
+
+// Desmembramento por produtor/origem (lotes)
+export const produtorApi = {
+  listar: (negociacaoId) => api.get(`/negociacoes/${negociacaoId}/produtores`),
+  criar: (negociacaoId, data) => api.post(`/negociacoes/${negociacaoId}/produtores`, data),
+  atualizar: (id, data) => api.put(`/produtores/${id}`, data),
+  excluir: (id) => api.delete(`/produtores/${id}`),
+}
+
+// Embarques e chegada
+export const embarqueApi = {
+  listar: (negociacaoId) => api.get(`/negociacoes/${negociacaoId}/embarques`),
+  listarPendentes: () => api.get('/embarques/pendentes'),
+  obter: (id) => api.get(`/embarques/${id}`),
+  criar: (negociacaoId, data) => api.post(`/negociacoes/${negociacaoId}/embarques`, data),
+  atualizar: (id, data) => api.put(`/embarques/${id}`, data),
+  excluir: (id) => api.delete(`/embarques/${id}`),
+  registrarChegada: (id, data) => api.put(`/embarques/${id}/chegada`, data),
+  atualizarDocumentos: (id, data) => api.put(`/embarques/${id}/documentos`, data),
+}
+
+// Conferência administrativa
+export const conferenciaApi = {
+  obter: (embarqueId) => api.get(`/embarques/${embarqueId}/conferencia`),
+  salvar: (embarqueId, data) => api.put(`/embarques/${embarqueId}/conferencia`, data),
+  finalizar: (embarqueId) => api.post(`/embarques/${embarqueId}/conferencia/finalizar`),
 }
 
 // Dashboard
@@ -60,6 +88,7 @@ export const dashboardApi = {
   detalhePorCategoria: (categoriaId, params) => api.get(`/dashboard/por-categoria/${categoriaId}/detalhe`, { params }),
   totais: (params) => api.get('/dashboard/totais', { params }),
   resumoCabecas: (params) => api.get('/dashboard/resumo-cabecas', { params }),
+  comissoes: (params) => api.get('/dashboard/comissoes', { params }),
   anos: () => api.get('/dashboard/anos'),
 }
 

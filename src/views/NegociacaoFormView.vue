@@ -14,6 +14,7 @@ const form = ref({
   municipioDestinoId: '',
   dataPrevistaEntrega: '',
   observacoes: '',
+  tipoNegocio: 'KG',
   itens: []
 })
 
@@ -104,6 +105,7 @@ async function carregar() {
       form.value.municipioDestinoId = neg.municipioDestinoId
       form.value.dataPrevistaEntrega = neg.dataPrevistaEntrega ? neg.dataPrevistaEntrega.split('T')[0] : ''
       form.value.observacoes = neg.observacoes || ''
+      form.value.tipoNegocio = neg.tipoNegocio || 'KG'
 
       // Preencher itens existentes
       for (const item of form.value.itens) {
@@ -149,6 +151,7 @@ async function salvar() {
       municipioDestinoId: Number(form.value.municipioDestinoId),
       dataPrevistaEntrega: form.value.dataPrevistaEntrega || null,
       observacoes: form.value.observacoes?.trim() || null,
+      tipoNegocio: form.value.tipoNegocio,
       itens: itensAtivos.map(i => ({
         categoriaId: i.categoriaId,
         qtdNegociada: i.qtdNegociada ? Number(i.qtdNegociada) : null,
@@ -253,6 +256,13 @@ onMounted(carregar)
             <div class="col-md-3">
               <label class="form-label fw-semibold">Data Prevista de Entrega</label>
               <input v-model="form.dataPrevistaEntrega" type="date" class="form-control" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Tipo de Negócio</label>
+              <select v-model="form.tipoNegocio" class="form-select">
+                <option value="KG">KG</option>
+                <option value="Perna">Perna</option>
+              </select>
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Observações</label>

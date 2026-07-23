@@ -15,6 +15,8 @@ const negFechadas = ref(0)
 const porCategoria = ref([])
 const recentes = ref([])
 const apenasMinhas = ref(false)
+const comissaoPendente = ref(0)
+const negociacoesComissaoPendente = ref(0)
 
 async function carregarRecentes() {
   carregandoRecentes.value = true
@@ -36,10 +38,18 @@ async function carregar() {
     negAndamento.value = resumo.data.negociacoesAndamento ?? 0
     negFechadas.value = resumo.data.negociacoesFechadas ?? 0
     porCategoria.value = resumo.data.porCategoria
+    const comissoes = await dashboardApi.comissoes()
+    comissaoPendente.value = comissoes.data.total_pendente
+    negociacoesComissaoPendente.value = comissoes.data.negociacoes_pendentes
     await carregarRecentes()
   } finally {
     carregando.value = false
   }
+}
+
+function fmtMoeda(v) {
+  if (!v && v !== 0) return 'R$ 0,00'
+  return `R$ ${Number(v).toFixed(2).replace('.', ',')}`
 }
 
 watch(apenasMinhas, () => carregarRecentes())
@@ -132,6 +142,17 @@ onMounted(carregar)
               Fechados
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Comissão pendente -->
+      <div class="pwa-card" style="margin-bottom:1.25rem;background:#fff7e6;border:1px solid #f7b955">
+        <div class="pwa-card-body" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:0.72rem;font-weight:700;color:#7a5200;text-transform:uppercase;letter-spacing:0.04em">Comissão Pendente</div>
+            <div style="font-size:1.4rem;font-weight:800;color:#7a5200">{{ fmtMoeda(comissaoPendente) }}</div>
+          </div>
+          <div style="font-size:0.8rem;color:#7a5200;opacity:0.85">{{ negociacoesComissaoPendente }} neg.</div>
         </div>
       </div>
 

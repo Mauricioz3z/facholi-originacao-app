@@ -21,6 +21,12 @@ const routes = [
   { path: '/negociacoes/nova', name: 'NovaNegociacao', component: () => import('../views/NegociacaoFormView.vue'), meta: { title: 'Nova Negociação' } },
   { path: '/negociacoes/:id/editar', name: 'EditarNegociacao', component: () => import('../views/NegociacaoFormView.vue'), meta: { title: 'Editar Negociação' } },
   { path: '/negociacoes/:id', name: 'DetalheNegociacao', component: () => import('../views/NegociacaoDetalheView.vue'), meta: { title: 'Detalhes da Negociação' } },
+  { path: '/negociacoes/:id/produtores', name: 'NegociacaoProdutores', component: () => import('../views/NegociacaoProdutoresView.vue'), meta: { title: 'Desmembramento por Produtor' } },
+  { path: '/negociacoes/:id/embarques', name: 'Embarques', component: () => import('../views/EmbarquesView.vue'), meta: { title: 'Embarques' } },
+  { path: '/negociacoes/:id/embarques/novo', name: 'NovoEmbarque', component: () => import('../views/EmbarqueFormView.vue'), meta: { title: 'Novo Embarque' } },
+  { path: '/embarques/:embarqueId/editar', name: 'EditarEmbarque', component: () => import('../views/EmbarqueFormView.vue'), meta: { title: 'Editar Embarque' } },
+  { path: '/embarques/:embarqueId/conferencia', name: 'Conferencia', component: () => import('../views/ConferenciaView.vue'), meta: { title: 'Conferência Administrativa' } },
+  { path: '/chegada', name: 'Chegada', component: () => import('../views/ChegadaView.vue'), meta: { title: 'Registro de Chegada' } },
   { path: '/admin/usuarios', name: 'Usuarios', component: () => import('../views/admin/UsuariosView.vue'), meta: { adminOnly: true, title: 'Compradores' } },
   { path: '/admin/corretores', name: 'Corretores', component: () => import('../views/admin/CorretoresView.vue'), meta: { adminOnly: true, title: 'Corretores' } },
   { path: '/admin/municipios-origem', name: 'MunicipiosOrigem', component: () => import('../views/admin/MunicipiosOrigemView.vue'), meta: { adminOnly: true, title: 'Municípios de Origem' } },
@@ -74,6 +80,12 @@ const routes = [
         name: 'PwaDetalheNegociacao',
         component: () => import('../views/pwa/NegociacaoDetalheView.vue'),
         meta: { pwa: true, title: 'Detalhes' }
+      },
+      {
+        path: 'chegada',
+        name: 'PwaChegada',
+        component: () => import('../views/pwa/ChegadaView.vue'),
+        meta: { pwa: true, title: 'Registro de Chegada' }
       }
     ]
   }

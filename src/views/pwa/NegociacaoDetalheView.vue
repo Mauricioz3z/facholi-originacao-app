@@ -10,13 +10,18 @@ const route = useRoute()
 const router = useRouter()
 const neg = ref(null)
 const carregando = ref(false)
-const salvandoEntrega = ref(false)
 const fechando = ref(false)
 const excluindo = ref(false)
 const confirmandoExclusao = ref(false)
 const erro = ref('')
-const entregaItens = ref([])
 const confirmandoFechamento = ref(false)
+
+const statusInfo = {
+  EmNegociacao: { label: 'Em Andamento', badge: 'pwa-badge-laranja' },
+  Fechado: { label: 'Fechado', badge: 'pwa-badge-verde' },
+  EmEntrega: { label: 'Em Entrega', badge: 'pwa-badge-verde' },
+  Concluido: { label: 'Concluído', badge: 'pwa-badge-cinza' }
+}
 
 async function carregar() {
   carregando.value = true
@@ -24,10 +29,6 @@ async function carregar() {
   try {
     const res = await negociacaoApi.obter(route.params.id)
     neg.value = res.data
-    entregaItens.value = res.data.itens.map(i => ({
-      itemId: i.id,
-      qtdEntregue: i.qtdEntregue || 0
-    }))
   } finally {
     carregando.value = false
   }
@@ -57,26 +58,6 @@ async function excluir() {
   } finally {
     excluindo.value = false
   }
-}
-
-async function salvarEntrega() {
-  salvandoEntrega.value = true
-  erro.value = ''
-  try {
-    await negociacaoApi.atualizarEntrega({
-      negociacaoId: Number(route.params.id),
-      itens: entregaItens.value
-    })
-    await carregar()
-  } catch (e) {
-    erro.value = e.response?.data?.mensagem || 'Erro ao salvar entrega.'
-  } finally {
-    salvandoEntrega.value = false
-  }
-}
-
-function entregaItem(itemId) {
-  return entregaItens.value.find(e => e.itemId === itemId)
 }
 
 function fmtData(d) {
@@ -128,11 +109,8 @@ onMounted(carregar)
             {{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}
           </div>
         </div>
-        <span
-          class="pwa-badge"
-          :class="neg.status === 'Fechado' ? 'pwa-badge-verde' : 'pwa-badge-laranja'"
-        >
-          {{ neg.status === 'Fechado' ? 'Fechado' : 'Em Andamento' }}
+        <span class="pwa-badge" :class="statusInfo[neg.status]?.badge || 'pwa-badge-verde'">
+          {{ statusInfo[neg.status]?.label || neg.status }}
         </span>
       </div>
 
@@ -199,14 +177,14 @@ onMounted(carregar)
         </div>
       </div>
 
-      <!-- Controle de entrega (só para fechadas) -->
-      <template v-if="neg.status === 'Fechado'">
-        <div class="pwa-section-title">Controle de Entrega</div>
+      <!-- Saldo de entrega (somente leitura — baixa via Embarques/Chegada) -->
+      <template v-if="neg.status !== 'EmNegociacao'">
+        <div class="pwa-section-title">Saldo de Entrega</div>
 
         <div class="pwa-card" style="margin-bottom:1rem">
           <div class="pwa-card-body">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
-              <span style="font-size:0.95rem;font-weight:700">Conclusão Total</span>
+              <span style="font-size:0.95rem;font-weight:700">Recebido</span>
               <span style="font-size:1.3rem;font-weight:800;color:var(--pwa-verde)">{{ percentualTotal }}%</span>
             </div>
             <div class="pwa-progress-wrap">
@@ -218,20 +196,8 @@ onMounted(carregar)
         <div v-for="item in neg.itens" :key="item.id + '_e'" class="pwa-sim-row" style="margin-bottom:0.75rem">
           <div class="pwa-sim-categoria">{{ item.categoriaNome }}</div>
           <div class="pwa-sim-faixa">Negociadas: {{ item.qtdNegociada || 0 }} cabeças</div>
-          <div style="margin:0.6rem 0 0.5rem">
-            <label class="pwa-label">Qtd. Entregue</label>
-            <input
-              v-if="podeGerenciar && entregaItem(item.id)"
-              v-model.number="entregaItem(item.id).qtdEntregue"
-              type="number"
-              min="0"
-              :max="item.qtdNegociada"
-              inputmode="numeric"
-              class="pwa-num-input"
-            />
-            <div v-else style="padding:0.5rem 0;font-weight:700;color:var(--pwa-texto)">
-              {{ item.qtdEntregue || 0 }} cabeças
-            </div>
+          <div style="padding:0.5rem 0;font-weight:700;color:var(--pwa-texto)">
+            {{ item.qtdEntregue || 0 }} recebidas · saldo {{ (item.qtdNegociada || 0) - (item.qtdEntregue || 0) }}
           </div>
           <div class="pwa-progress-wrap">
             <div class="pwa-progress-bar" :style="{ width: (item.percentualConclusao || 0) + '%' }"></div>
@@ -249,14 +215,12 @@ onMounted(carregar)
         </div>
 
         <button
-          v-if="podeGerenciar"
-          class="pwa-btn pwa-btn-primary"
-          @click="salvarEntrega"
-          :disabled="salvandoEntrega"
+          class="pwa-btn pwa-btn-outline"
+          style="margin-bottom:0.5rem"
+          @click="router.push('/negociacoes/' + neg.id + '/embarques')"
         >
-          <span v-if="salvandoEntrega" class="spinner-border spinner-border-sm"></span>
-          <i v-else class="bi bi-check-circle-fill"></i>
-          Salvar Entrega
+          <i class="bi bi-truck"></i>
+          Ver Embarques
         </button>
 
         <!-- Admin pode editar qualquer dado, mesmo com a negociação fechada -->

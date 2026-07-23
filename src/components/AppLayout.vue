@@ -51,6 +51,12 @@ function isActive(path) {
             <span>Negociações</span>
           </router-link>
         </li>
+        <li class="nav-item">
+          <router-link to="/chegada" class="nav-link" :class="{ active: isActive('/chegada') }">
+            <i class="bi bi-truck"></i>
+            <span>Registro de Chegada</span>
+          </router-link>
+        </li>
 
         <!-- Admin -->
         <template v-if="auth.isAdmin">

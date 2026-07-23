@@ -9,21 +9,27 @@ const router = useRouter()
 const auth = useAuthStore()
 const neg = ref(null)
 const carregando = ref(false)
-const salvandoEntrega = ref(false)
 const fechando = ref(false)
 const excluindo = ref(false)
+const alterandoStatus = ref(false)
+const alterandoComissao = ref(false)
 const erro = ref('')
-const entregaItens = ref([])
+const novoStatus = ref('')
+const motivoStatus = ref('')
+
+const statusInfo = {
+  EmNegociacao: { label: 'Em Negociação', badge: 'badge-andamento' },
+  Fechado: { label: 'Fechado', badge: 'bg-success' },
+  EmEntrega: { label: 'Em Entrega', badge: 'bg-info text-dark' },
+  Concluido: { label: 'Concluído', badge: 'bg-secondary' }
+}
 
 async function carregar() {
   carregando.value = true
   try {
     const res = await negociacaoApi.obter(route.params.id)
     neg.value = res.data
-    entregaItens.value = res.data.itens.map(i => ({
-      itemId: i.id,
-      qtdEntregue: i.qtdEntregue || 0
-    }))
+    novoStatus.value = res.data.status
   } finally {
     carregando.value = false
   }
@@ -55,33 +61,32 @@ async function excluir() {
   }
 }
 
-async function salvarEntrega() {
-  salvandoEntrega.value = true
+async function alterarStatus() {
+  if (novoStatus.value === neg.value.status) return
+  alterandoStatus.value = true
+  erro.value = ''
   try {
-    await negociacaoApi.atualizarEntrega({
-      negociacaoId: Number(route.params.id),
-      itens: entregaItens.value
-    })
+    await negociacaoApi.alterarStatus(route.params.id, novoStatus.value, motivoStatus.value || null)
+    motivoStatus.value = ''
     await carregar()
   } catch (e) {
-    erro.value = e.response?.data?.mensagem || 'Erro ao atualizar entrega.'
+    erro.value = e.response?.data?.mensagem || 'Erro ao alterar status.'
   } finally {
-    salvandoEntrega.value = false
+    alterandoStatus.value = false
   }
 }
 
-function entregaParaItem(itemId) {
-  return entregaItens.value.find(e => e.itemId === itemId)
-}
-
-function statusEntregaBadge(s) {
-  const map = { 'Concluido': 'bg-success', 'Parcial': 'bg-warning text-dark', 'Pendente': 'bg-secondary' }
-  return 'badge ' + (map[s] || 'bg-secondary')
-}
-
-function statusLabel(s) {
-  const map = { 'Concluido': 'Concluído', 'Parcial': 'Parcial', 'Pendente': 'Pendente' }
-  return map[s] || s
+async function alternarComissao() {
+  alterandoComissao.value = true
+  erro.value = ''
+  try {
+    await negociacaoApi.alterarComissao(route.params.id, !neg.value.comissaoPaga)
+    await carregar()
+  } catch (e) {
+    erro.value = e.response?.data?.mensagem || 'Erro ao atualizar comissão.'
+  } finally {
+    alterandoComissao.value = false
+  }
 }
 
 function fmtData(d) {
@@ -120,12 +125,21 @@ onMounted(carregar)
           </router-link>
           <div>
             <h4 class="fw-bold mb-0">Negociação {{ neg.numero }}</h4>
-            <span :class="neg.status === 'Fechado' ? 'badge bg-success' : 'badge badge-andamento'">
-              {{ neg.status === 'Fechado' ? 'Fechado' : 'Em Negociação' }}
-            </span>
+            <span :class="'badge ' + statusInfo[neg.status]?.badge">{{ statusInfo[neg.status]?.label || neg.status }}</span>
+            <span class="badge bg-light text-dark border ms-1">{{ neg.tipoNegocio }}</span>
+            <span
+              class="badge ms-1"
+              :class="neg.comissaoPaga ? 'bg-success' : 'bg-warning text-dark'"
+            >Comissão {{ neg.comissaoPaga ? 'paga' : 'pendente' }}</span>
           </div>
         </div>
         <div class="d-flex gap-2">
+          <router-link v-if="neg.status !== 'EmNegociacao'" :to="`/negociacoes/${neg.id}/produtores`" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-diagram-3 me-1"></i> Desmembramento
+          </router-link>
+          <router-link v-if="neg.status !== 'EmNegociacao'" :to="`/negociacoes/${neg.id}/embarques`" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-truck me-1"></i> Embarques
+          </router-link>
           <router-link v-if="neg.status === 'EmNegociacao' || auth.isAdmin" :to="`/negociacoes/${neg.id}/editar`" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-pencil me-1"></i> Editar
           </router-link>
@@ -139,6 +153,8 @@ onMounted(carregar)
           </button>
         </div>
       </div>
+
+      <div v-if="erro" class="alert alert-danger py-2 mb-3 small">{{ erro }}</div>
 
       <!-- Resumo -->
       <div class="row g-3 mb-4">
@@ -213,12 +229,12 @@ onMounted(carregar)
         </div>
       </div>
 
-      <!-- Controle de Entrega (apenas para fechadas) -->
-      <div v-if="neg.status === 'Fechado'" class="card">
+      <!-- Saldo de entrega (somente leitura — a baixa é feita via Embarques/Chegada) -->
+      <div v-if="neg.status !== 'EmNegociacao'" class="card mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-          <span class="fw-semibold">Controle de Entrega</span>
+          <span class="fw-semibold">Saldo de Entrega</span>
           <div class="d-flex align-items-center gap-2">
-            <span class="text-muted small">Conclusão geral:</span>
+            <span class="text-muted small">Recebido:</span>
             <div class="progress" style="width: 120px; height: 8px;">
               <div class="progress-bar" :class="percentualTotal >= 100 ? 'bg-success' : 'bg-primary'"
                    :style="{ width: percentualTotal + '%' }"></div>
@@ -232,42 +248,60 @@ onMounted(carregar)
               <tr>
                 <th>Categoria</th>
                 <th class="text-end">Qtd. Negociada</th>
-                <th class="text-end">Qtd. Entregue</th>
-                <th class="text-center">% Conclusão</th>
-                <th>Status Entrega</th>
+                <th class="text-end">Qtd. Recebida</th>
+                <th class="text-end">Saldo</th>
+                <th class="text-center">%</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in neg.itens" :key="item.id">
                 <td class="fw-semibold">{{ item.categoriaNome }}</td>
                 <td class="text-end">{{ item.qtdNegociada?.toLocaleString('pt-BR') || '—' }}</td>
-                <td class="text-end">
-                  <input
-                    v-if="entregaParaItem(item.id)"
-                    v-model.number="entregaParaItem(item.id).qtdEntregue"
-                    type="number" min="0" :max="item.qtdNegociada"
-                    class="form-control form-control-sm text-end d-inline-block"
-                    style="width: 90px"
-                  />
-                </td>
-                <td class="text-center">
-                  <div class="progress" style="height:6px">
-                    <div class="progress-bar" :style="{ width: (item.percentualConclusao || 0) + '%' }"></div>
-                  </div>
-                  <small>{{ item.percentualConclusao || 0 }}%</small>
-                </td>
-                <td>
-                  <span :class="statusEntregaBadge(item.statusEntrega)">{{ statusLabel(item.statusEntrega) }}</span>
-                </td>
+                <td class="text-end">{{ (item.qtdEntregue || 0).toLocaleString('pt-BR') }}</td>
+                <td class="text-end">{{ ((item.qtdNegociada || 0) - (item.qtdEntregue || 0)).toLocaleString('pt-BR') }}</td>
+                <td class="text-center">{{ item.percentualConclusao || 0 }}%</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div class="card-footer bg-white">
-          <div v-if="erro" class="alert alert-danger py-2 mb-2 small">{{ erro }}</div>
-          <button class="btn btn-primary btn-sm" @click="salvarEntrega" :disabled="salvandoEntrega">
-            <span v-if="salvandoEntrega" class="spinner-border spinner-border-sm me-1"></span>
-            Salvar Entrega
+        <div class="card-footer bg-white small text-muted">
+          A baixa de saldo é automática, feita ao registrar a chegada dos embarques.
+        </div>
+      </div>
+
+      <!-- Ações do Master -->
+      <div v-if="auth.isAdmin" class="card">
+        <div class="card-header bg-white fw-semibold">Ações do Master</div>
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Alterar status</label>
+              <select v-model="novoStatus" class="form-select form-select-sm">
+                <option value="EmNegociacao">Em Negociação</option>
+                <option value="Fechado">Fechado</option>
+                <option value="EmEntrega">Em Entrega</option>
+                <option value="Concluido">Concluído</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold">Motivo (opcional)</label>
+              <input v-model="motivoStatus" class="form-control form-control-sm" placeholder="Ex.: encerrado com 49 de 50 cabeças" />
+            </div>
+            <div class="col-md-3">
+              <button
+                class="btn btn-primary btn-sm w-100"
+                :disabled="alterandoStatus || novoStatus === neg.status"
+                @click="alterarStatus"
+              >
+                <span v-if="alterandoStatus" class="spinner-border spinner-border-sm me-1"></span>
+                Alterar Status
+              </button>
+            </div>
+          </div>
+          <hr />
+          <button class="btn btn-outline-secondary btn-sm" :disabled="alterandoComissao" @click="alternarComissao">
+            <span v-if="alterandoComissao" class="spinner-border spinner-border-sm me-1"></span>
+            Marcar comissão como {{ neg.comissaoPaga ? 'não paga' : 'paga' }}
           </button>
         </div>
       </div>

@@ -9,22 +9,26 @@ const auth = useAuthStore()
 const negociacoes = ref([])
 const total = ref(0)
 const carregando = ref(false)
-const statusFiltro = ref('Todos')
+const statusFiltro = ref('') // '' = padrão do backend (oculta Concluídas)
 const apenasMinhas = ref(false)
-const mostrarConcluidas = ref(false)
+
+const statusInfo = {
+  EmNegociacao: { label: 'Em Andamento', badge: 'pwa-badge-laranja' },
+  Fechado: { label: 'Fechado', badge: 'pwa-badge-verde' },
+  EmEntrega: { label: 'Em Entrega', badge: 'pwa-badge-verde' },
+  Concluido: { label: 'Concluído', badge: 'pwa-badge-cinza' }
+}
 
 const negociacoesFiltradas = computed(() => {
-  let lista = negociacoes.value
-  if (apenasMinhas.value) lista = lista.filter(n => n.compradorId === auth.user?.id)
-  if (!mostrarConcluidas.value) lista = lista.filter(n => !concluida(n))
-  return lista
+  if (!apenasMinhas.value) return negociacoes.value
+  return negociacoes.value.filter(n => n.compradorId === auth.user?.id)
 })
 
 async function carregar() {
   carregando.value = true
   try {
     const res = await negociacaoApi.listar({
-      status: statusFiltro.value !== 'Todos' ? statusFiltro.value : undefined,
+      status: statusFiltro.value || undefined,
       tamanhoPagina: 50
     })
     negociacoes.value = res.data.items
@@ -56,10 +60,6 @@ function percentualEntrega(neg) {
   return Math.round(qtdEnt / qtdNeg * 100)
 }
 
-function concluida(neg) {
-  return neg.status === 'Fechado' && percentualEntrega(neg) >= 100
-}
-
 function filtrar(status) {
   statusFiltro.value = status
   carregar()
@@ -70,26 +70,40 @@ onMounted(carregar)
 
 <template>
   <div>
-    <!-- Filtros de status (3 colunas, sem scroll) -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
+    <!-- Filtros de status -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px">
       <button
         class="pwa-btn pwa-btn-sm"
-        :class="statusFiltro === 'Todos' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
+        :class="statusFiltro === '' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
         style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
-        @click="filtrar('Todos')"
-      >Todos</button>
+        @click="filtrar('')"
+      >Em Aberto</button>
+      <button
+        class="pwa-btn pwa-btn-sm"
+        :class="statusFiltro === 'EmEntrega' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
+        style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
+        @click="filtrar('EmEntrega')"
+      >Em Entrega</button>
+      <button
+        class="pwa-btn pwa-btn-sm"
+        :class="statusFiltro === 'Concluido' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
+        style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
+        @click="filtrar('Concluido')"
+      >Concluídas</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px">
       <button
         class="pwa-btn pwa-btn-sm"
         :class="statusFiltro === 'EmNegociacao' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
         style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
         @click="filtrar('EmNegociacao')"
-      >Em Andamento</button>
+      >Em Negociação</button>
       <button
         class="pwa-btn pwa-btn-sm"
         :class="statusFiltro === 'Fechado' ? 'pwa-btn-primary' : 'pwa-btn-outline'"
         style="padding:0 0.4rem;font-size:0.82rem;width:auto;white-space:nowrap"
         @click="filtrar('Fechado')"
-      >Fechados</button>
+      >Fechado</button>
     </div>
 
     <!-- Checkbox "Apenas minhas" + contador -->
@@ -124,15 +138,6 @@ onMounted(carregar)
       </span>
     </div>
 
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin-bottom:1rem;font-size:0.82rem;color:var(--pwa-texto-suave);font-weight:600">
-      <input
-        type="checkbox"
-        v-model="mostrarConcluidas"
-        style="width:18px;height:18px;accent-color:var(--pwa-verde);cursor:pointer;flex-shrink:0;margin:0"
-      />
-      Mostrar concluídas
-    </label>
-
     <div v-if="carregando" class="text-center py-5">
       <div class="spinner-border" style="color:var(--pwa-verde)"></div>
     </div>
@@ -150,8 +155,8 @@ onMounted(carregar)
       :key="neg.id"
       class="pwa-neg-card"
       :class="{
-        fechado:   neg.status === 'Fechado' && !concluida(neg),
-        concluido: concluida(neg)
+        fechado:   neg.status === 'Fechado' || neg.status === 'EmEntrega',
+        concluido: neg.status === 'Concluido'
       }"
       @click="router.push('/app/negociacoes/' + neg.id)"
     >
@@ -160,15 +165,8 @@ onMounted(carregar)
           <div class="pwa-neg-numero">{{ neg.numero }}</div>
           <span v-if="ehMinha(neg)" class="pwa-badge pwa-badge-verde" style="font-size:0.65rem">MINHA</span>
         </div>
-        <span
-          class="pwa-badge"
-          :class="neg.status !== 'Fechado' ? 'pwa-badge-laranja'
-                : concluida(neg) ? 'pwa-badge-cinza'
-                : 'pwa-badge-verde'"
-        >
-          {{ neg.status !== 'Fechado' ? 'Em Andamento'
-           : concluida(neg) ? 'Concluído'
-           : 'Fechado' }}
+        <span class="pwa-badge" :class="statusInfo[neg.status]?.badge || 'pwa-badge-verde'">
+          {{ statusInfo[neg.status]?.label || neg.status }}
         </span>
       </div>
       <div class="pwa-neg-titulo">{{ neg.municipioOrigemNome }}-{{ neg.municipioOrigemUf }}</div>
@@ -182,7 +180,7 @@ onMounted(carregar)
           <i class="bi bi-collection-fill"></i> {{ totalCabecas(neg).toLocaleString('pt-BR') }} cab.
         </span>
       </div>
-      <div v-if="neg.status === 'Fechado'" style="margin-top:6px">
+      <div v-if="neg.status !== 'EmNegociacao'" style="margin-top:6px">
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:var(--pwa-texto-suave);margin-bottom:3px">
           <span><i class="bi bi-truck me-1"></i>Entrega</span>
           <span style="font-weight:700;color:var(--pwa-verde)">{{ percentualEntrega(neg) }}%</span>
